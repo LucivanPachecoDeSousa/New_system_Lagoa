@@ -244,6 +244,34 @@ def criar_tabelas():
     except Exception:
         pass
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS servico_tipos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    servicos_padrao = ["TROCA DE OLEO", "PNEUS", "FILTRO", "OUTROS"]
+    for nome in servicos_padrao:
+        cursor.execute("SELECT id FROM servico_tipos WHERE nome = ?", (nome,))
+        if cursor.fetchone() is None:
+            cursor.execute("INSERT INTO servico_tipos (nome) VALUES (?)", (nome,))
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS manutencoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data DATE NOT NULL DEFAULT (date('now')),
+            veiculo TEXT NOT NULL DEFAULT '',
+            servico_tipo_id INTEGER REFERENCES servico_tipos(id),
+            descricao_pecas TEXT DEFAULT '',
+            responsavel TEXT NOT NULL DEFAULT '',
+            kilometragem_horimetro INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ativo INTEGER DEFAULT 1
+        )
+    """)
+
     conn.commit()
 
 def seed_admin():

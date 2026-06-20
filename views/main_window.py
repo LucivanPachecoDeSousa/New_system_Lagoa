@@ -13,6 +13,7 @@ from views.carregamento_view import CarregamentoView
 from views.material_construcao_view import MaterialConstrucaoView
 from views.entrada_adubo_view import EntradaAduboView
 from views.entrada_calcario_view import EntradaCalcarioView
+from views.manutencao_view import ManutencaoView
 from views.previsao_semanal_widget import PrevisaoSemanalWidget
 from services.clima_service import obter_localizacao, obter_clima
 
@@ -146,6 +147,12 @@ class MainWindow(QMainWindow):
         btn_entrada_calcario.setStyleSheet(self._nav_btn_style())
         btn_entrada_calcario.clicked.connect(lambda: self.navigate_to(EntradaCalcarioView()))
         top_layout.addWidget(btn_entrada_calcario)
+
+        btn_manutencao = QPushButton("Manutenções")
+        btn_manutencao.setCursor(Qt.PointingHandCursor)
+        btn_manutencao.setStyleSheet(self._nav_btn_style())
+        btn_manutencao.clicked.connect(lambda: self.navigate_to(ManutencaoView()))
+        top_layout.addWidget(btn_manutencao)
 
         btn_config = QPushButton("Configuração")
         btn_config.setCursor(Qt.PointingHandCursor)
