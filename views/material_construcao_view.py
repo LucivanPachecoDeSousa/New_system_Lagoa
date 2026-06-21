@@ -308,6 +308,7 @@ class MaterialConstrucaoView(QWidget):
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.controller = MaterialConstrucaoController()
         self._setup_ui()
+        self._atualizar_filtro_material()
         self._carregar_dados()
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._carregar_dados)
@@ -344,10 +345,6 @@ class MaterialConstrucaoView(QWidget):
         toolbar.setSpacing(8)
 
         self.cmb_filtro_material = QComboBox()
-        self.cmb_filtro_material.addItem("Todos os materiais", None)
-        tipos = self.controller.listar_tipos_material()
-        for t in tipos:
-            self.cmb_filtro_material.addItem(t["nome"], t["id"])
         self.cmb_filtro_material.setStyleSheet(self._combo_style())
         self.cmb_filtro_material.currentIndexChanged.connect(self._carregar_dados)
         toolbar.addWidget(self.cmb_filtro_material)
@@ -531,6 +528,18 @@ class MaterialConstrucaoView(QWidget):
     def _fmt_num(self, val):
         return f"{val:_.0f}".replace("_", ".")
 
+    def _atualizar_filtro_material(self):
+        current_id = self.cmb_filtro_material.currentData()
+        self.cmb_filtro_material.blockSignals(True)
+        self.cmb_filtro_material.clear()
+        self.cmb_filtro_material.addItem("Todos os materiais", None)
+        for t in self.controller.listar_tipos_material():
+            self.cmb_filtro_material.addItem(t["nome"], t["id"])
+        idx = self.cmb_filtro_material.findData(current_id)
+        if idx >= 0:
+            self.cmb_filtro_material.setCurrentIndex(idx)
+        self.cmb_filtro_material.blockSignals(False)
+
     def _carregar_dados(self):
         registros = self.controller.listar()
         material_id = self.cmb_filtro_material.currentData()
@@ -549,7 +558,7 @@ class MaterialConstrucaoView(QWidget):
             self.table.setItem(i, 3, QTableWidgetItem(r.get("empresa_fornecedora", "")))
             self.table.setItem(i, 4, QTableWidgetItem(r.get("transportadora", "")))
             self.table.setItem(i, 5, QTableWidgetItem(self._fmt_num(r.get('peso_kg', 0))))
-            self.table.setItem(i, 6, QTableWidgetItem(f"{r.get('metros_cubicos', 0):.3f}"))
+            self.table.setItem(i, 6, QTableWidgetItem(f"{r.get('metros_cubicos', 0):.2f}"))
             total_peso += r.get("peso_kg", 0) or 0
             total_metros += r.get("metros_cubicos", 0) or 0
         if nome_material == "Todos os materiais":
@@ -595,6 +604,7 @@ class MaterialConstrucaoView(QWidget):
         if dialog.exec():
             dados = dialog.obter_dados()
             self.controller.salvar(dados)
+            self._atualizar_filtro_material()
             self._carregar_dados()
         self._timer.start(2000)
 
@@ -615,6 +625,7 @@ class MaterialConstrucaoView(QWidget):
         if dialog.exec():
             dados = dialog.obter_dados()
             self.controller.atualizar(registro_id, dados)
+            self._atualizar_filtro_material()
             self._carregar_dados()
         self._timer.start(2000)
 
