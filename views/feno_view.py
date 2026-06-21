@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor
 from controllers.feno_controller import FenoController
 from controllers.auth_controller import AuthController
 from utils.widgets import UpperCaseLineEdit, estilizar_calendario
+from utils.excel_export import exportar_excel
 
 
 class FenoDialog(QDialog):
@@ -467,6 +468,20 @@ class FenoView(QWidget):
         self.btn_excluir.clicked.connect(self._excluir)
         toolbar.addWidget(self.btn_excluir)
 
+        btn_exportar = QPushButton("📤 Exportar")
+        btn_exportar.setCursor(Qt.PointingHandCursor)
+        btn_exportar.setFixedHeight(40)
+        btn_exportar.setStyleSheet("""
+            QPushButton {
+                padding: 8px 16px; background: #27ae60; color: white;
+                border: none; border-radius: 8px; font-weight: 700; font-size: 12px;
+            }
+            QPushButton:hover { background: #2ecc71; }
+            QPushButton:pressed { background: #1e8449; }
+        """)
+        btn_exportar.clicked.connect(self._exportar)
+        toolbar.addWidget(btn_exportar)
+
         card_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
@@ -696,3 +711,20 @@ class FenoView(QWidget):
         if confirm == QMessageBox.Yes:
             self.controller.remover(registro_id)
             self._carregar_dados()
+
+    def _exportar(self):
+        tipo = self.cmb_filtro_tipo.currentData()
+        registros = self.controller.listar(tipo=tipo)
+        cabecalhos = ["ID", "Data", "Tipo", "Placa", "Peso Bruto", "Tara",
+                       "Peso Líquido", "Quantidade", "Média (Kg/Un)"]
+        dados = []
+        for r in registros:
+            qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
+            data_str = qd.toString("dd/MM/yyyy") if qd.isValid() else r["data"][:10]
+            dados.append((
+                r["id"], data_str, r.get("tipo", ""),
+                r.get("placa", ""), r.get("peso_bruto", 0),
+                r.get("tara", 0), r.get("peso_liquido", 0),
+                r.get("quantidade", 0), r.get("media_peso", 0),
+            ))
+        exportar_excel(self, "relatorio_feno.xlsx", "Feno / Pré-Secado", cabecalhos, dados)

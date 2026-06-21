@@ -11,6 +11,7 @@ from controllers.vendas_controller import VendasController
 from controllers.auth_controller import AuthController
 from controllers.produto_controller import ProdutoController
 from utils.widgets import UpperCaseLineEdit, estilizar_calendario
+from utils.excel_export import exportar_excel
 
 
 class VendasDialog(QDialog):
@@ -473,6 +474,20 @@ class VendasView(QWidget):
         self.btn_excluir.clicked.connect(self._excluir)
         toolbar.addWidget(self.btn_excluir)
 
+        btn_exportar = QPushButton("📤 Exportar")
+        btn_exportar.setCursor(Qt.PointingHandCursor)
+        btn_exportar.setFixedHeight(40)
+        btn_exportar.setStyleSheet("""
+            QPushButton {
+                padding: 8px 16px; background: #27ae60; color: white;
+                border: none; border-radius: 8px; font-weight: 700; font-size: 12px;
+            }
+            QPushButton:hover { background: #2ecc71; }
+            QPushButton:pressed { background: #1e8449; }
+        """)
+        btn_exportar.clicked.connect(self._exportar)
+        toolbar.addWidget(btn_exportar)
+
         card_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
@@ -672,3 +687,19 @@ class VendasView(QWidget):
             self.controller.remover(registro_id)
             self._popular_compradores()
             self._carregar_dados()
+
+    def _exportar(self):
+        comprador = self.cmb_filtro_comprador.currentData() or None
+        registros = self.controller.listar(comprador=comprador)
+        cabecalhos = ["ID", "Data", "Produto", "Quantidade (Kg)", "Comprador",
+                       "Valor Unitário", "Valor Total"]
+        dados = []
+        for r in registros:
+            qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
+            data_str = qd.toString("dd/MM/yyyy") if qd.isValid() else r["data"][:10]
+            dados.append((
+                r["id"], data_str, r.get("produto", ""),
+                r.get("quantidade_kg", 0), r.get("comprador", ""),
+                r.get("valor_unitario", 0), r.get("valor_total", 0),
+            ))
+        exportar_excel(self, "relatorio_vendas.xlsx", "Vendas", cabecalhos, dados)

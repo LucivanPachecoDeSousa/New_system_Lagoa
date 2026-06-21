@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor
 from controllers.entrada_calcario_controller import EntradaCalcarioController
 from controllers.auth_controller import AuthController
 from utils.widgets import UpperCaseLineEdit, estilizar_calendario
+from utils.excel_export import exportar_excel
 
 
 class EntradaCalcarioDialog(QDialog):
@@ -501,6 +502,20 @@ class EntradaCalcarioView(QWidget):
         self.btn_excluir.clicked.connect(self._excluir)
         toolbar.addWidget(self.btn_excluir)
 
+        btn_exportar = QPushButton("📤 Exportar")
+        btn_exportar.setCursor(Qt.PointingHandCursor)
+        btn_exportar.setFixedHeight(40)
+        btn_exportar.setStyleSheet("""
+            QPushButton {
+                padding: 8px 16px; background: #27ae60; color: white;
+                border: none; border-radius: 8px; font-weight: 700; font-size: 12px;
+            }
+            QPushButton:hover { background: #2ecc71; }
+            QPushButton:pressed { background: #1e8449; }
+        """)
+        btn_exportar.clicked.connect(self._exportar)
+        toolbar.addWidget(btn_exportar)
+
         card_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
@@ -775,3 +790,29 @@ class EntradaCalcarioView(QWidget):
         if confirm == QMessageBox.Yes:
             self.controller.remover(registro_id)
             self._carregar_dados()
+
+    def _exportar(self):
+        registros = self.controller.listar()
+        tipo_id = self.cmb_filtro_tipo.currentData()
+        if tipo_id:
+            registros = [r for r in registros if r["calcario_tipo_id"] == tipo_id]
+        filtro_local = self.cmb_filtro_local.currentData()
+        if filtro_local:
+            registros = [r for r in registros if r.get("local_descarga", "").upper() == filtro_local.upper()]
+        data_inicio = self.date_filtro_inicio.date().toString("yyyy-MM-dd")
+        data_fim = self.date_filtro_fim.date().toString("yyyy-MM-dd")
+        registros = [r for r in registros if data_inicio <= r["data"][:10] <= data_fim]
+        cabecalhos = ["ID", "Data", "Calcário", "Lote", "Fornecedor", "Local",
+                       "Peso (kg)", "Placa", "Motorista", "NF"]
+        dados = []
+        for r in registros:
+            qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
+            data_str = qd.toString("dd/MM/yyyy") if qd.isValid() else r["data"][:10]
+            dados.append((
+                r["id"], data_str, r.get("calcario_nome", ""),
+                r.get("nome_lote", ""), r.get("entidade_nome", ""),
+                r.get("local_descarga", ""), r.get("peso_total_kg", 0),
+                r.get("placa", ""), r.get("motorista", ""),
+                r.get("numero_nf", ""),
+            ))
+        exportar_excel(self, "relatorio_entradas_calcario.xlsx", "Entradas Calcário", cabecalhos, dados)

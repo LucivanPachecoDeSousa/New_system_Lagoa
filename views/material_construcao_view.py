@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor
 from controllers.material_construcao_controller import MaterialConstrucaoController
 from controllers.auth_controller import AuthController
 from utils.widgets import UpperCaseLineEdit, estilizar_calendario
+from utils.excel_export import exportar_excel
 
 
 class MaterialConstrucaoDialog(QDialog):
@@ -419,6 +420,20 @@ class MaterialConstrucaoView(QWidget):
         self.btn_excluir.clicked.connect(self._excluir)
         toolbar.addWidget(self.btn_excluir)
 
+        btn_exportar = QPushButton("📤 Exportar")
+        btn_exportar.setCursor(Qt.PointingHandCursor)
+        btn_exportar.setFixedHeight(40)
+        btn_exportar.setStyleSheet("""
+            QPushButton {
+                padding: 8px 16px; background: #27ae60; color: white;
+                border: none; border-radius: 8px; font-weight: 700; font-size: 12px;
+            }
+            QPushButton:hover { background: #2ecc71; }
+            QPushButton:pressed { background: #1e8449; }
+        """)
+        btn_exportar.clicked.connect(self._exportar)
+        toolbar.addWidget(btn_exportar)
+
         card_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
@@ -622,3 +637,20 @@ class MaterialConstrucaoView(QWidget):
         if confirm == QMessageBox.Yes:
             self.controller.remover(registro_id)
             self._carregar_dados()
+
+    def _exportar(self):
+        registros = self.controller.listar()
+        material_id = self.cmb_filtro_material.currentData()
+        if material_id:
+            registros = [r for r in registros if r["material_id"] == material_id]
+        cabecalhos = ["ID", "Data", "Material", "Fornecedora", "Transportadora", "Peso (kg)", "M³"]
+        dados = []
+        for r in registros:
+            qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
+            data_str = qd.toString("dd/MM/yyyy") if qd.isValid() else r["data"][:10]
+            dados.append((
+                r["id"], data_str, r.get("material_nome", ""),
+                r.get("empresa_fornecedora", ""), r.get("transportadora", ""),
+                r.get("peso_kg", 0), r.get("metros_cubicos", 0),
+            ))
+        exportar_excel(self, "relatorio_materiais.xlsx", "Materiais", cabecalhos, dados)
