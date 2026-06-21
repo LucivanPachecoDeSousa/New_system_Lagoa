@@ -537,7 +537,10 @@ class EntidadeView(QWidget):
         self.table.setRowCount(len(entidades))
         for i, e in enumerate(entidades):
             self.table.setItem(i, 0, QTableWidgetItem(str(e["id"])))
-            self.table.setItem(i, 1, QTableWidgetItem(e.get("cnpj_cpf", "")))
+            doc = e.get("cnpj_cpf", "")
+            if not doc.isdigit():
+                doc = "---"
+            self.table.setItem(i, 1, QTableWidgetItem(doc))
             self.table.setItem(i, 2, QTableWidgetItem(e["razao_social"]))
             self.table.setItem(i, 3, QTableWidgetItem(e.get("nome_fantasia", "")))
             self.table.setItem(i, 4, QTableWidgetItem(e.get("cidade", "")))

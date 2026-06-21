@@ -186,9 +186,10 @@ class CarregamentoDialog(QDialog):
     def _create_entidade(self):
         self.cmb_entidade = QComboBox()
         self.cmb_entidade.setStyleSheet(self._input_style())
-        entidades = self.controller.listar_entidades()
+        self.cmb_entidade.addItem("Selecione a entidade", None)
+        entidades = self.controller.listar_clientes_carregamento()
         for e in entidades:
-            self.cmb_entidade.addItem(f"{e['razao_social']} ({e['cnpj_cpf']})", e["id"])
+            self.cmb_entidade.addItem(e["razao_social"], e["id"])
         self.cmb_entidade.currentIndexChanged.connect(self._on_entidade_changed)
         return self.cmb_entidade
 
@@ -203,9 +204,10 @@ class CarregamentoDialog(QDialog):
     def _popular_lotes(self, entidade_id=None):
         self.cmb_lote.blockSignals(True)
         self.cmb_lote.clear()
+        self.cmb_lote.addItem("Selecione o lote", None)
         for l in self._lotes:
-            if entidade_id is None or l.get("entidade_id") == entidade_id:
-                self.cmb_lote.addItem(f"{l['nome_lote']} - {l.get('entidade_nome', '')}", l["id"])
+            if entidade_id is not None and l.get("entidade_id") == entidade_id:
+                self.cmb_lote.addItem(l["nome_lote"], l["id"])
         self.cmb_lote.blockSignals(False)
 
     def _on_entidade_changed(self):
