@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QDateEdit,
 )
 from PySide6.QtCore import Qt, QTimer, QDate
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QDoubleValidator
 from controllers.vendas_controller import VendasController
 from controllers.auth_controller import AuthController
 from utils.widgets import UpperCaseLineEdit, estilizar_calendario
@@ -157,13 +157,12 @@ class VendasDialog(QDialog):
         return self.txt_produto
 
     def _criar_quantidade(self):
-        self.spin_quantidade = QDoubleSpinBox()
-        self.spin_quantidade.setRange(0, 999999)
-        self.spin_quantidade.setDecimals(3)
-        self.spin_quantidade.setFixedHeight(44)
-        self.spin_quantidade.setStyleSheet(self._field_style())
-        self.spin_quantidade.valueChanged.connect(self._calcular_unitario_para_total)
-        return self.spin_quantidade
+        self.txt_quantidade = UpperCaseLineEdit()
+        self.txt_quantidade.setPlaceholderText("Ex: 1500 ou 1250.5")
+        self.txt_quantidade.setValidator(QDoubleValidator(0, 999999, 3))
+        self.txt_quantidade.setStyleSheet(self._input_style())
+        self.txt_quantidade.textChanged.connect(self._calcular_unitario_para_total)
+        return self.txt_quantidade
 
     def _criar_comprador(self):
         self.txt_comprador = UpperCaseLineEdit()
@@ -233,11 +232,17 @@ class VendasDialog(QDialog):
             }
         """
 
+    def _get_qtd(self):
+        try:
+            return float(self.txt_quantidade.text().strip() or 0)
+        except ValueError:
+            return 0
+
     def _calcular_unitario_para_total(self):
         if self._calculando:
             return
         self._calculando = True
-        qtd = self.spin_quantidade.value()
+        qtd = self._get_qtd()
         unitario = self.spin_valor_unitario.value()
         total = qtd * unitario
         self.spin_valor_total.setValue(round(total, 2))
@@ -246,7 +251,7 @@ class VendasDialog(QDialog):
     def _calcular_total_para_unitario(self):
         if self._calculando:
             return
-        qtd = self.spin_quantidade.value()
+        qtd = self._get_qtd()
         total = self.spin_valor_total.value()
         if qtd > 0:
             self._calculando = True
@@ -259,7 +264,11 @@ class VendasDialog(QDialog):
         if qd.isValid():
             self.date_data.setDate(qd)
         self.txt_produto.setText(r.get("produto", ""))
-        self.spin_quantidade.setValue(r.get("quantidade_kg", 0))
+        qtd = r.get("quantidade_kg", 0)
+        if qtd == int(qtd):
+            self.txt_quantidade.setText(str(int(qtd)))
+        else:
+            self.txt_quantidade.setText(str(qtd))
         self.txt_comprador.setText(r.get("comprador", ""))
         self.spin_valor_unitario.setValue(r.get("valor_unitario", 0))
         self.spin_valor_total.setValue(r.get("valor_total", 0))
@@ -269,9 +278,9 @@ class VendasDialog(QDialog):
             self._msg_erro("Informe o nome do produto.")
             self.txt_produto.setFocus()
             return
-        if self.spin_quantidade.value() <= 0:
+        if self._get_qtd() <= 0:
             self._msg_erro("A quantidade deve ser maior que zero.")
-            self.spin_quantidade.setFocus()
+            self.txt_quantidade.setFocus()
             return
         if not self.txt_comprador.text().strip():
             self._msg_erro("Informe o nome do comprador.")
@@ -303,7 +312,7 @@ class VendasDialog(QDialog):
         return {
             "data": self.date_data.date().toString("yyyy-MM-dd"),
             "produto": self.txt_produto.text().strip(),
-            "quantidade_kg": self.spin_quantidade.value(),
+            "quantidade_kg": self._get_qtd(),
             "comprador": self.txt_comprador.text().strip(),
             "valor_unitario": self.spin_valor_unitario.value(),
             "valor_total": self.spin_valor_total.value(),
@@ -355,6 +364,30 @@ class VendasView(QWidget):
 
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
+
+        lbl_filtro = QLabel("Filtrar Comprador:")
+        lbl_filtro.setStyleSheet("color: #555; font-size: 12px; font-weight: 700; letter-spacing: 1px;")
+        toolbar.addWidget(lbl_filtro)
+
+        self.txt_filtro_comprador = UpperCaseLineEdit()
+        self.txt_filtro_comprador.setPlaceholderText("Nome do comprador...")
+        self.txt_filtro_comprador.setStyleSheet("""
+            QLineEdit {
+                padding: 8px 14px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                font-size: 13px;
+                background: #fafafa;
+                min-width: 220px;
+                color: #000;
+            }
+            QLineEdit:focus {
+                border-color: #2d6a2d;
+                background: white;
+            }
+        """)
+        self.txt_filtro_comprador.textChanged.connect(self._carregar_dados)
+        toolbar.addWidget(self.txt_filtro_comprador)
 
         toolbar.addStretch()
 
@@ -503,8 +536,14 @@ class VendasView(QWidget):
     def _fmt_money(self, val):
         return f"R$ {val:_.2f}".replace("_", ".").replace(".", ",")
 
+    def _fmt_qtd(self, val):
+        if val == int(val):
+            return str(int(val))
+        return f"{val:.3f}".rstrip("0").rstrip(".")
+
     def _carregar_dados(self):
-        registros = self.controller.listar()
+        comprador = self.txt_filtro_comprador.text().strip() or None
+        registros = self.controller.listar(comprador=comprador)
         self.table.setRowCount(len(registros))
         total_kg = total_valor = 0
         for i, r in enumerate(registros):
@@ -513,7 +552,7 @@ class VendasView(QWidget):
             data_str = qd.toString("dd/MM/yyyy") if qd.isValid() else r["data"][:10]
             self.table.setItem(i, 1, QTableWidgetItem(data_str))
             self.table.setItem(i, 2, QTableWidgetItem(r.get("produto", "")))
-            self.table.setItem(i, 3, QTableWidgetItem(f"{r.get('quantidade_kg', 0):.3f}"))
+            self.table.setItem(i, 3, QTableWidgetItem(self._fmt_qtd(r.get("quantidade_kg", 0))))
             self.table.setItem(i, 4, QTableWidgetItem(r.get("comprador", "")))
             self.table.setItem(i, 5, QTableWidgetItem(self._fmt_money(r.get("valor_unitario", 0))))
             self.table.setItem(i, 6, QTableWidgetItem(self._fmt_money(r.get("valor_total", 0))))
@@ -521,7 +560,7 @@ class VendasView(QWidget):
             total_valor += r.get("valor_total", 0) or 0
 
         self.lbl_resumo.setText(
-            f"Total: {total_kg:.3f} kg  |  "
+            f"Total: {self._fmt_qtd(total_kg)} kg  |  "
             f"Valor Total: {self._fmt_money(total_valor)}"
         )
 

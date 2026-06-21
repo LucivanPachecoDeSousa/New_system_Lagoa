@@ -5,7 +5,7 @@ class VendasController:
     def __init__(self):
         self.db = Database()
 
-    def listar(self, apenas_ativos=True):
+    def listar(self, apenas_ativos=True, comprador=None):
         conn = self.db.connect()
         cursor = conn.cursor()
         query = "SELECT * FROM vendas"
@@ -13,6 +13,9 @@ class VendasController:
         params = []
         if apenas_ativos:
             conds.append("ativo = 1")
+        if comprador:
+            conds.append("comprador LIKE ?")
+            params.append(f"%{comprador}%")
         if conds:
             query += " WHERE " + " AND ".join(conds)
         query += " ORDER BY data DESC, created_at DESC"
