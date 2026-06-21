@@ -121,6 +121,18 @@ class CarregamentoController:
         cursor.execute("SELECT id, razao_social, cnpj_cpf FROM entidades WHERE ativo = 1 ORDER BY razao_social")
         return [dict(row) for row in cursor.fetchall()]
 
+    def listar_clientes_carregamento(self):
+        conn = self.db.connect()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT DISTINCT e.id, e.razao_social, e.cnpj_cpf
+            FROM entidades e
+            JOIN carregamentos c ON c.entidade_id = e.id
+            WHERE e.ativo = 1
+            ORDER BY e.razao_social
+        """)
+        return [dict(row) for row in cursor.fetchall()]
+
     def listar_lotes_carregamento(self):
         conn = self.db.connect()
         cursor = conn.cursor()

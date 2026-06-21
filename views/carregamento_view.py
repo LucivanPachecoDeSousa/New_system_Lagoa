@@ -390,10 +390,7 @@ class CarregamentoView(QWidget):
         super().__init__()
         self.controller = CarregamentoController()
         self._setup_ui()
-        self._carregar_dados()
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self._carregar_dados)
-        self._timer.start(2000)
+
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -434,12 +431,12 @@ class CarregamentoView(QWidget):
             }
             QLineEdit:focus { border-color: #2d6a2d; background: white; }
         """)
-        self.txt_busca.textChanged.connect(self._carregar_dados)
+        self.txt_busca.returnPressed.connect(self._carregar_dados)
         toolbar.addWidget(self.txt_busca)
 
         self.cmb_filtro_cliente = QComboBox()
         self.cmb_filtro_cliente.addItem("Todos os clientes", None)
-        clientes = self.controller.listar_entidades()
+        clientes = self.controller.listar_clientes_carregamento()
         for c in clientes:
             self.cmb_filtro_cliente.addItem(f"{c['razao_social']} ({c['cnpj_cpf']})", c["id"])
         self.cmb_filtro_cliente.setStyleSheet(self._combo_style())
@@ -450,21 +447,23 @@ class CarregamentoView(QWidget):
         lbl_de.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; margin-left: 5px;")
         toolbar.addWidget(lbl_de)
         self.dt_inicio = QDateEdit()
-        self.dt_inicio.setDate(QDate.currentDate().addMonths(-1))
         self.dt_inicio.setCalendarPopup(True)
         self.dt_inicio.setDisplayFormat("dd/MM/yyyy")
+        self.dt_inicio.setSpecialValueText("Início")
+        self.dt_inicio.setDate(self.dt_inicio.minimumDate())
         estilizar_calendario(self.dt_inicio)
         self.dt_inicio.setStyleSheet(self._date_style())
         self.dt_inicio.dateChanged.connect(self._carregar_dados)
         toolbar.addWidget(self.dt_inicio)
 
-        lbl_ate = QLabel("Até:")
-        lbl_ate.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; margin-left: 5px;")
-        toolbar.addWidget(lbl_ate)
+        lbl_a = QLabel("até")
+        lbl_a.setStyleSheet("color: #1a3a1a; font-weight: 600; padding: 0 4px;")
+
         self.dt_fim = QDateEdit()
-        self.dt_fim.setDate(QDate.currentDate())
         self.dt_fim.setCalendarPopup(True)
         self.dt_fim.setDisplayFormat("dd/MM/yyyy")
+        self.dt_fim.setSpecialValueText("Fim")
+        self.dt_fim.setDate(self.dt_fim.minimumDate())
         estilizar_calendario(self.dt_fim)
         self.dt_fim.setStyleSheet(self._date_style())
         self.dt_fim.dateChanged.connect(self._carregar_dados)
@@ -600,8 +599,8 @@ class CarregamentoView(QWidget):
     def _carregar_dados(self):
         busca = self.txt_busca.text().strip()
         entidade_id = self.cmb_filtro_cliente.currentData()
-        data_inicio = self.dt_inicio.date().toString("yyyy-MM-dd")
-        data_fim = self.dt_fim.date().toString("yyyy-MM-dd")
+        data_inicio = self.dt_inicio.date().toString("yyyy-MM-dd") if self.dt_inicio.text() != self.dt_inicio.specialValueText() else None
+        data_fim = self.dt_fim.date().toString("yyyy-MM-dd") if self.dt_fim.text() != self.dt_fim.specialValueText() else None
         dados = self.controller.listar(busca=busca, entidade_id=entidade_id,
                                        data_inicio=data_inicio, data_fim=data_fim)
         self.table.setRowCount(len(dados))
@@ -640,12 +639,10 @@ class CarregamentoView(QWidget):
 
     def _novo(self):
         dialog = CarregamentoDialog(self)
-        self._timer.stop()
         if dialog.exec():
             dados = dialog.obter_dados()
             self.controller.salvar(dados)
             self._carregar_dados()
-        self._timer.start(2000)
 
     def _editar(self):
         row = self.table.currentRow()
@@ -660,12 +657,10 @@ class CarregamentoView(QWidget):
             self._msg_box(QMessageBox.Warning, "Erro", "Carregamento não encontrado.")
             return
         dialog = CarregamentoDialog(self, carregamento)
-        self._timer.stop()
         if dialog.exec():
             dados = dialog.obter_dados()
             self.controller.atualizar(c_id, dados)
             self._carregar_dados()
-        self._timer.start(2000)
 
     def _excluir(self):
         row = self.table.currentRow()
@@ -675,13 +670,11 @@ class CarregamentoView(QWidget):
         if not self._confirmar_senha():
             return
         c_id = int(self.table.item(row, 0).text())
-        self._timer.stop()
         confirm = self._msg_box(
             QMessageBox.Question, "Confirmar",
             "Tem certeza que deseja excluir este carregamento?",
             QMessageBox.Yes | QMessageBox.No,
         )
-        self._timer.start(2000)
         if confirm == QMessageBox.Yes:
             self.controller.remover(c_id)
             self._carregar_dados()
@@ -699,8 +692,8 @@ class CarregamentoView(QWidget):
 
         busca = self.txt_busca.text().strip()
         entidade_id = self.cmb_filtro_cliente.currentData()
-        data_inicio = self.dt_inicio.date().toString("yyyy-MM-dd")
-        data_fim = self.dt_fim.date().toString("yyyy-MM-dd")
+        data_inicio = self.dt_inicio.date().toString("yyyy-MM-dd") if self.dt_inicio.text() != self.dt_inicio.specialValueText() else None
+        data_fim = self.dt_fim.date().toString("yyyy-MM-dd") if self.dt_fim.text() != self.dt_fim.specialValueText() else None
         dados = self.controller.listar(busca=busca, entidade_id=entidade_id,
                                        data_inicio=data_inicio, data_fim=data_fim)
 
