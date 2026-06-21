@@ -538,11 +538,11 @@ class CarregamentoView(QWidget):
         self.table.verticalHeader().hide()
         self.table.doubleClicked.connect(self._editar)
 
-        h = self.table.horizontalHeader()
+        self._header = self.table.horizontalHeader()
         for i in range(14):
-            h.setSectionResizeMode(i, QHeaderView.ResizeToContents)
-        h.setSectionResizeMode(2, QHeaderView.Stretch)
-        h.setSectionResizeMode(3, QHeaderView.Stretch)
+            self._header.setSectionResizeMode(i, QHeaderView.Interactive)
+        self._header.setSectionResizeMode(2, QHeaderView.Stretch)
+        self._header.setSectionResizeMode(3, QHeaderView.Stretch)
 
         self.table.setStyleSheet("""
             QTableWidget {
@@ -626,11 +626,15 @@ class CarregamentoView(QWidget):
             self.table.setItem(i, 9, QTableWidgetItem(self._fmt_num(c.get('peso_nf', 0))))
             self.table.setItem(i, 10, QTableWidgetItem(c.get("numero_nf", "")))
             self.table.setItem(i, 11, QTableWidgetItem(c.get("chave_nf", "")))
-            self.table.setItem(i, 12, QTableWidgetItem(f"{c.get('valor_unitario', 0):.2f}"))
+            self.table.setItem(i, 12, QTableWidgetItem(f"{c.get('valor_unitario', 0):.4f}"))
             self.table.setItem(i, 13, QTableWidgetItem(f"{c.get('total_nota', 0):.2f}"))
             total_pesoTicket += c.get("peso_ticket", 0) or 0
             total_pesoNF += c.get("peso_nf", 0) or 0
             total_nota += c.get("total_nota", 0) or 0
+        self.table.resizeColumnsToContents()
+        self._header.setSectionResizeMode(2, QHeaderView.Stretch)
+        self._header.setSectionResizeMode(3, QHeaderView.Stretch)
+
         nome = self.cmb_filtro_cliente.currentText()
         self.lbl_resumo.setText(
             f"{nome}\n\n"
@@ -730,7 +734,7 @@ class CarregamentoView(QWidget):
             else:
                 data_fmt = ""
             vals = [
-                c["id"], data_fmt, c.get("entidade_nome", ""), c.get("nome_lote", ""),
+                int(c["id"]), data_fmt, c.get("entidade_nome", ""), c.get("nome_lote", ""),
                 c.get("placa", ""), c.get("peso_bruto", 0), c.get("tara", 0),
                 c.get("peso_liquido", 0), c.get("peso_ticket", 0),
                 c.get("peso_nf", 0), c.get("numero_nf", ""),
@@ -742,8 +746,10 @@ class CarregamentoView(QWidget):
                 cell.border = thin_border
                 if isinstance(val, (int, float)):
                     cell.alignment = Alignment(horizontal='right')
-                    if col in (6, 7, 8, 9, 10):
+                    if col in (1, 6, 7, 8, 9, 10):
                         cell.number_format = '#,##0'
+                    elif col == 13:
+                        cell.number_format = '#,##0.0000'
                     else:
                         cell.number_format = '#,##0.00'
 

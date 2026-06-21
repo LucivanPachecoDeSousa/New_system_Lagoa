@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 
-def exportar_excel(parent, nome_sugerido, titulo_aba, cabecalhos, dados):
+def exportar_excel(parent, nome_sugerido, titulo_aba, cabecalhos, dados, col_decimals=None):
     from openpyxl import Workbook
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
     from openpyxl.utils import get_column_letter
@@ -42,7 +42,8 @@ def exportar_excel(parent, nome_sugerido, titulo_aba, cabecalhos, dados):
             cell.border = thin_border
             cell.font = Font(size=10, name="Calibri")
             if isinstance(val, float):
-                cell.number_format = '#,##0.00'
+                dec = (col_decimals or {}).get(col, 2)
+                cell.number_format = f'#,##0.{"0" * dec}'
                 cell.alignment = Alignment(horizontal='right')
             elif isinstance(val, int):
                 cell.number_format = '#,##0'

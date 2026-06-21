@@ -187,7 +187,7 @@ class VendasDialog(QDialog):
     def _criar_valor_unitario(self):
         self.spin_valor_unitario = QDoubleSpinBox()
         self.spin_valor_unitario.setRange(0, 999999999)
-        self.spin_valor_unitario.setDecimals(2)
+        self.spin_valor_unitario.setDecimals(4)
         self.spin_valor_unitario.setPrefix("R$ ")
         self.spin_valor_unitario.setFixedHeight(44)
         self.spin_valor_unitario.setStyleSheet(self._field_style())
@@ -266,7 +266,7 @@ class VendasDialog(QDialog):
         qtd = self._get_qtd()
         unitario = self.spin_valor_unitario.value()
         total = qtd * unitario
-        self.spin_valor_total.setValue(round(total, 2))
+        self.spin_valor_total.setValue(round(total, 4))
         self._calculando = False
 
     def _calcular_total_para_unitario(self):
@@ -277,7 +277,7 @@ class VendasDialog(QDialog):
         if qtd > 0:
             self._calculando = True
             unitario = total / qtd
-            self.spin_valor_unitario.setValue(round(unitario, 2))
+            self.spin_valor_unitario.setValue(round(unitario, 4))
             self._calculando = False
 
     def _preencher(self, r):
@@ -617,7 +617,7 @@ class VendasView(QWidget):
             self.table.setItem(i, 2, QTableWidgetItem(r.get("produto", "")))
             self.table.setItem(i, 3, QTableWidgetItem(self._fmt_qtd(r.get("quantidade_kg", 0))))
             self.table.setItem(i, 4, QTableWidgetItem(r.get("comprador", "")))
-            self.table.setItem(i, 5, QTableWidgetItem(self._fmt_money(r.get("valor_unitario", 0))))
+            self.table.setItem(i, 5, QTableWidgetItem(f"R$ {r.get('valor_unitario', 0):_.4f}".replace("_", ".").replace(".", ",")))
             self.table.setItem(i, 6, QTableWidgetItem(self._fmt_money(r.get("valor_total", 0))))
             self.table.setItem(i, 7, QTableWidgetItem(r.get("status_pagamento", "Pendente")))
             total_kg += r.get("quantidade_kg", 0) or 0
@@ -723,4 +723,4 @@ class VendasView(QWidget):
                 r.get("valor_unitario", 0), r.get("valor_total", 0),
                 r.get("status_pagamento", "Pendente"),
             ))
-        exportar_excel(self, "relatorio_vendas.xlsx", "Vendas", cabecalhos, dados)
+        exportar_excel(self, "relatorio_vendas.xlsx", "Vendas", cabecalhos, dados, col_decimals={6: 4})
