@@ -290,6 +290,21 @@ def criar_tabelas():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS vendas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data DATE NOT NULL DEFAULT (date('now')),
+            produto TEXT NOT NULL DEFAULT '',
+            quantidade_kg REAL NOT NULL DEFAULT 0,
+            comprador TEXT NOT NULL DEFAULT '',
+            valor_unitario REAL NOT NULL DEFAULT 0,
+            valor_total REAL NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ativo INTEGER DEFAULT 1
+        )
+    """)
+
     conn.commit()
 
 def seed_admin():

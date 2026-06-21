@@ -15,6 +15,7 @@ from views.entrada_adubo_view import EntradaAduboView
 from views.entrada_calcario_view import EntradaCalcarioView
 from views.manutencao_view import ManutencaoView
 from views.feno_view import FenoView
+from views.vendas_view import VendasView
 from views.previsao_semanal_widget import PrevisaoSemanalWidget
 from services.clima_service import obter_localizacao, obter_clima
 
@@ -160,6 +161,12 @@ class MainWindow(QMainWindow):
         btn_feno.setStyleSheet(self._nav_btn_style())
         btn_feno.clicked.connect(lambda: self.navigate_to(FenoView()))
         top_layout.addWidget(btn_feno)
+
+        btn_vendas = QPushButton("Vendas")
+        btn_vendas.setCursor(Qt.PointingHandCursor)
+        btn_vendas.setStyleSheet(self._nav_btn_style())
+        btn_vendas.clicked.connect(lambda: self.navigate_to(VendasView()))
+        top_layout.addWidget(btn_vendas)
 
         btn_config = QPushButton("Configuração")
         btn_config.setCursor(Qt.PointingHandCursor)
