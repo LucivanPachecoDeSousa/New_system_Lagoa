@@ -14,6 +14,7 @@ from views.material_construcao_view import MaterialConstrucaoView
 from views.entrada_adubo_view import EntradaAduboView
 from views.entrada_calcario_view import EntradaCalcarioView
 from views.manutencao_view import ManutencaoView
+from views.feno_view import FenoView
 from views.previsao_semanal_widget import PrevisaoSemanalWidget
 from services.clima_service import obter_localizacao, obter_clima
 
@@ -153,6 +154,12 @@ class MainWindow(QMainWindow):
         btn_manutencao.setStyleSheet(self._nav_btn_style())
         btn_manutencao.clicked.connect(lambda: self.navigate_to(ManutencaoView()))
         top_layout.addWidget(btn_manutencao)
+
+        btn_feno = QPushButton("Feno/Pré Secado")
+        btn_feno.setCursor(Qt.PointingHandCursor)
+        btn_feno.setStyleSheet(self._nav_btn_style())
+        btn_feno.clicked.connect(lambda: self.navigate_to(FenoView()))
+        top_layout.addWidget(btn_feno)
 
         btn_config = QPushButton("Configuração")
         btn_config.setCursor(Qt.PointingHandCursor)

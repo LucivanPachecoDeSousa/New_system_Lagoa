@@ -272,6 +272,24 @@ def criar_tabelas():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS entradas_feno (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data DATE NOT NULL DEFAULT (date('now')),
+            tipo TEXT NOT NULL DEFAULT 'FENO'
+                CHECK (tipo IN ('FENO', 'PRÉ-SECADO')),
+            placa TEXT NOT NULL DEFAULT '',
+            peso_bruto REAL NOT NULL DEFAULT 0,
+            tara REAL NOT NULL DEFAULT 0,
+            peso_liquido REAL NOT NULL DEFAULT 0,
+            quantidade REAL NOT NULL DEFAULT 0,
+            media_peso REAL NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ativo INTEGER DEFAULT 1
+        )
+    """)
+
     conn.commit()
 
 def seed_admin():
