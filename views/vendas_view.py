@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt, QTimer, QDate
 from PySide6.QtGui import QColor, QDoubleValidator
 from controllers.vendas_controller import VendasController
 from controllers.auth_controller import AuthController
+from controllers.produto_controller import ProdutoController
 from utils.widgets import UpperCaseLineEdit, estilizar_calendario
 
 
@@ -151,10 +152,15 @@ class VendasDialog(QDialog):
         return self.date_data
 
     def _criar_produto(self):
-        self.txt_produto = UpperCaseLineEdit()
-        self.txt_produto.setPlaceholderText("Nome do produto")
-        self.txt_produto.setStyleSheet(self._input_style())
-        return self.txt_produto
+        self.cmb_produto = QComboBox()
+        self.cmb_produto.setEditable(True)
+        self.cmb_produto.setInsertPolicy(QComboBox.NoInsert)
+        self.cmb_produto.lineEdit().setPlaceholderText("Selecione ou digite o produto")
+        self.cmb_produto.setStyleSheet(self._input_style())
+        produtos = ProdutoController().listar()
+        for p in produtos:
+            self.cmb_produto.addItem(p["nome"], p["id"])
+        return self.cmb_produto
 
     def _criar_quantidade(self):
         self.txt_quantidade = UpperCaseLineEdit()
@@ -263,7 +269,11 @@ class VendasDialog(QDialog):
         qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
         if qd.isValid():
             self.date_data.setDate(qd)
-        self.txt_produto.setText(r.get("produto", ""))
+        idx = self.cmb_produto.findText(r.get("produto", ""))
+        if idx >= 0:
+            self.cmb_produto.setCurrentIndex(idx)
+        else:
+            self.cmb_produto.setEditText(r.get("produto", ""))
         qtd = r.get("quantidade_kg", 0)
         if qtd == int(qtd):
             self.txt_quantidade.setText(str(int(qtd)))
@@ -274,9 +284,9 @@ class VendasDialog(QDialog):
         self.spin_valor_total.setValue(r.get("valor_total", 0))
 
     def _validar_salvar(self):
-        if not self.txt_produto.text().strip():
+        if not self.cmb_produto.currentText().strip():
             self._msg_erro("Informe o nome do produto.")
-            self.txt_produto.setFocus()
+            self.cmb_produto.setFocus()
             return
         if self._get_qtd() <= 0:
             self._msg_erro("A quantidade deve ser maior que zero.")
@@ -311,7 +321,7 @@ class VendasDialog(QDialog):
     def obter_dados(self):
         return {
             "data": self.date_data.date().toString("yyyy-MM-dd"),
-            "produto": self.txt_produto.text().strip(),
+            "produto": self.cmb_produto.currentText().strip(),
             "quantidade_kg": self._get_qtd(),
             "comprador": self.txt_comprador.text().strip(),
             "valor_unitario": self.spin_valor_unitario.value(),
