@@ -84,6 +84,13 @@ class VendasDialog(QDialog):
         linha3.addLayout(g6)
         card_layout.addLayout(linha3)
 
+        linha4 = QHBoxLayout()
+        linha4.setSpacing(12)
+        g7 = self._grupo("STATUS", self._criar_status())
+        linha4.addLayout(g7)
+        linha4.addStretch()
+        card_layout.addLayout(linha4)
+
         card_layout.addStretch()
 
         btn_layout = QHBoxLayout()
@@ -197,6 +204,13 @@ class VendasDialog(QDialog):
         self.spin_valor_total.valueChanged.connect(self._calcular_total_para_unitario)
         return self.spin_valor_total
 
+    def _criar_status(self):
+        self.cmb_status = QComboBox()
+        self.cmb_status.addItem("Pendente", "Pendente")
+        self.cmb_status.addItem("Pago", "Pago")
+        self.cmb_status.setStyleSheet(self._input_style())
+        return self.cmb_status
+
     def _field_style(self):
         return """
             QDateEdit, QDoubleSpinBox {
@@ -283,6 +297,9 @@ class VendasDialog(QDialog):
         self.txt_comprador.setText(r.get("comprador", ""))
         self.spin_valor_unitario.setValue(r.get("valor_unitario", 0))
         self.spin_valor_total.setValue(r.get("valor_total", 0))
+        idx = self.cmb_status.findData(r.get("status_pagamento", "Pendente"))
+        if idx >= 0:
+            self.cmb_status.setCurrentIndex(idx)
 
     def _validar_salvar(self):
         if not self.cmb_produto.currentText().strip():
@@ -327,6 +344,7 @@ class VendasDialog(QDialog):
             "comprador": self.txt_comprador.text().strip(),
             "valor_unitario": self.spin_valor_unitario.value(),
             "valor_total": self.spin_valor_total.value(),
+            "status_pagamento": self.cmb_status.currentData(),
         }
 
     def keyPressEvent(self, event):
@@ -491,10 +509,10 @@ class VendasView(QWidget):
         card_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(7)
+        self.table.setColumnCount(8)
         self.table.setHorizontalHeaderLabels(
             ["ID", "Data", "Produto", "Quantidade (Kg)", "Comprador",
-             "Valor Unitário", "Valor Total"]
+             "Valor Unitário", "Valor Total", "Status"]
         )
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -512,6 +530,7 @@ class VendasView(QWidget):
         header_view.setSectionResizeMode(4, stretch)
         header_view.setSectionResizeMode(5, stretch)
         header_view.setSectionResizeMode(6, stretch)
+        header_view.setSectionResizeMode(7, stretch)
 
         self.table.setStyleSheet("""
             QTableWidget {
@@ -600,6 +619,7 @@ class VendasView(QWidget):
             self.table.setItem(i, 4, QTableWidgetItem(r.get("comprador", "")))
             self.table.setItem(i, 5, QTableWidgetItem(self._fmt_money(r.get("valor_unitario", 0))))
             self.table.setItem(i, 6, QTableWidgetItem(self._fmt_money(r.get("valor_total", 0))))
+            self.table.setItem(i, 7, QTableWidgetItem(r.get("status_pagamento", "Pendente")))
             total_kg += r.get("quantidade_kg", 0) or 0
             total_valor += r.get("valor_total", 0) or 0
 
@@ -692,7 +712,7 @@ class VendasView(QWidget):
         comprador = self.cmb_filtro_comprador.currentData() or None
         registros = self.controller.listar(comprador=comprador)
         cabecalhos = ["ID", "Data", "Produto", "Quantidade (Kg)", "Comprador",
-                       "Valor Unitário", "Valor Total"]
+                       "Valor Unitário", "Valor Total", "Status"]
         dados = []
         for r in registros:
             qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
@@ -701,5 +721,6 @@ class VendasView(QWidget):
                 r["id"], data_str, r.get("produto", ""),
                 r.get("quantidade_kg", 0), r.get("comprador", ""),
                 r.get("valor_unitario", 0), r.get("valor_total", 0),
+                r.get("status_pagamento", "Pendente"),
             ))
         exportar_excel(self, "relatorio_vendas.xlsx", "Vendas", cabecalhos, dados)

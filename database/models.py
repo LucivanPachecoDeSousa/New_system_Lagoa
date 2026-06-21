@@ -299,11 +299,17 @@ def criar_tabelas():
             comprador TEXT NOT NULL DEFAULT '',
             valor_unitario REAL NOT NULL DEFAULT 0,
             valor_total REAL NOT NULL DEFAULT 0,
+            status_pagamento TEXT NOT NULL DEFAULT 'Pendente',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             ativo INTEGER DEFAULT 1
         )
     """)
+
+    try:
+        cursor.execute("ALTER TABLE vendas ADD COLUMN status_pagamento TEXT NOT NULL DEFAULT 'Pendente'")
+    except Exception:
+        pass
 
     conn.commit()
 

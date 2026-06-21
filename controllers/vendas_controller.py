@@ -34,8 +34,8 @@ class VendasController:
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO vendas
-               (data, produto, quantidade_kg, comprador, valor_unitario, valor_total)
-               VALUES (?, ?, ?, ?, ?, ?)""",
+               (data, produto, quantidade_kg, comprador, valor_unitario, valor_total, status_pagamento)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
                 dados["data"],
                 dados.get("produto", ""),
@@ -43,6 +43,7 @@ class VendasController:
                 dados.get("comprador", ""),
                 dados.get("valor_unitario", 0),
                 dados.get("valor_total", 0),
+                dados.get("status_pagamento", "Pendente"),
             ),
         )
         conn.commit()
@@ -55,7 +56,7 @@ class VendasController:
             """UPDATE vendas
                SET data = ?, produto = ?, quantidade_kg = ?,
                    comprador = ?, valor_unitario = ?, valor_total = ?,
-                   updated_at = CURRENT_TIMESTAMP
+                   status_pagamento = ?, updated_at = CURRENT_TIMESTAMP
                WHERE id = ?""",
             (
                 dados["data"],
@@ -64,6 +65,7 @@ class VendasController:
                 dados.get("comprador", ""),
                 dados.get("valor_unitario", 0),
                 dados.get("valor_total", 0),
+                dados.get("status_pagamento", "Pendente"),
                 registro_id,
             ),
         )
