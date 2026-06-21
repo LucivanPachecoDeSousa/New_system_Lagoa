@@ -340,6 +340,7 @@ class VendasView(QWidget):
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.controller = VendasController()
         self._setup_ui()
+        self._popular_compradores()
         self._carregar_dados()
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._carregar_dados)
@@ -379,10 +380,9 @@ class VendasView(QWidget):
         lbl_filtro.setStyleSheet("color: #555; font-size: 12px; font-weight: 700; letter-spacing: 1px;")
         toolbar.addWidget(lbl_filtro)
 
-        self.txt_filtro_comprador = UpperCaseLineEdit()
-        self.txt_filtro_comprador.setPlaceholderText("Nome do comprador...")
-        self.txt_filtro_comprador.setStyleSheet("""
-            QLineEdit {
+        self.cmb_filtro_comprador = QComboBox()
+        self.cmb_filtro_comprador.setStyleSheet("""
+            QComboBox {
                 padding: 8px 14px;
                 border: 2px solid #ddd;
                 border-radius: 8px;
@@ -391,13 +391,19 @@ class VendasView(QWidget):
                 min-width: 220px;
                 color: #000;
             }
-            QLineEdit:focus {
+            QComboBox:focus {
                 border-color: #2d6a2d;
                 background: white;
             }
+            QComboBox QAbstractItemView {
+                color: #000;
+                background: white;
+                selection-background-color: #e6e6e6;
+                selection-color: #000;
+            }
         """)
-        self.txt_filtro_comprador.textChanged.connect(self._carregar_dados)
-        toolbar.addWidget(self.txt_filtro_comprador)
+        self.cmb_filtro_comprador.currentIndexChanged.connect(self._carregar_dados)
+        toolbar.addWidget(self.cmb_filtro_comprador)
 
         toolbar.addStretch()
 
@@ -551,8 +557,21 @@ class VendasView(QWidget):
             return str(int(val))
         return f"{val:.3f}".rstrip("0").rstrip(".")
 
+    def _popular_compradores(self):
+        self.cmb_filtro_comprador.blockSignals(True)
+        atual = self.cmb_filtro_comprador.currentText()
+        self.cmb_filtro_comprador.clear()
+        self.cmb_filtro_comprador.addItem("Todos os compradores", None)
+        compradores = self.controller.listar_compradores()
+        for nome in compradores:
+            self.cmb_filtro_comprador.addItem(nome, nome)
+        idx = self.cmb_filtro_comprador.findText(atual)
+        if idx >= 0:
+            self.cmb_filtro_comprador.setCurrentIndex(idx)
+        self.cmb_filtro_comprador.blockSignals(False)
+
     def _carregar_dados(self):
-        comprador = self.txt_filtro_comprador.text().strip() or None
+        comprador = self.cmb_filtro_comprador.currentData() or None
         registros = self.controller.listar(comprador=comprador)
         self.table.setRowCount(len(registros))
         total_kg = total_valor = 0
@@ -608,6 +627,7 @@ class VendasView(QWidget):
         if dialog.exec():
             dados = dialog.obter_dados()
             self.controller.salvar(dados)
+            self._popular_compradores()
             self._carregar_dados()
         self._timer.start(2000)
 
@@ -628,6 +648,7 @@ class VendasView(QWidget):
         if dialog.exec():
             dados = dialog.obter_dados()
             self.controller.atualizar(registro_id, dados)
+            self._popular_compradores()
             self._carregar_dados()
         self._timer.start(2000)
 
@@ -649,4 +670,5 @@ class VendasView(QWidget):
         self._timer.start(2000)
         if confirm == QMessageBox.Yes:
             self.controller.remover(registro_id)
+            self._popular_compradores()
             self._carregar_dados()

@@ -70,6 +70,12 @@ class VendasController:
         conn.commit()
         return cursor.rowcount > 0
 
+    def listar_compradores(self):
+        conn = self.db.connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT comprador FROM vendas WHERE ativo = 1 AND comprador != '' ORDER BY comprador")
+        return [row["comprador"] for row in cursor.fetchall()]
+
     def remover(self, registro_id):
         conn = self.db.connect()
         cursor = conn.cursor()
