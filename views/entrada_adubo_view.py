@@ -420,7 +420,7 @@ class EntradaAduboView(QWidget):
         for t in tipos:
             self.cmb_filtro_adubo.addItem(t["nome"], t["id"])
         self.cmb_filtro_adubo.setStyleSheet(self._combo_style())
-        self.cmb_filtro_adubo.currentIndexChanged.connect(self._carregar_dados)
+        self.cmb_filtro_adubo.currentIndexChanged.connect(self._on_filtro_adubo_changed)
         toolbar.addWidget(self.cmb_filtro_adubo)
 
         self.cmb_filtro_fazenda = QComboBox()
@@ -429,8 +429,15 @@ class EntradaAduboView(QWidget):
         for f in fazendas:
             self.cmb_filtro_fazenda.addItem(f["nome"], f["id"])
         self.cmb_filtro_fazenda.setStyleSheet(self._combo_style())
-        self.cmb_filtro_fazenda.currentIndexChanged.connect(self._carregar_dados)
+        self.cmb_filtro_fazenda.currentIndexChanged.connect(self._on_filtro_fazenda_changed)
         toolbar.addWidget(self.cmb_filtro_fazenda)
+
+        self.cmb_filtro_lote = QComboBox()
+        self.cmb_filtro_lote.addItem("Todos os lotes", None)
+        self.cmb_filtro_lote.setStyleSheet(self._combo_style())
+        self.cmb_filtro_lote.currentIndexChanged.connect(self._carregar_dados)
+        toolbar.addWidget(self.cmb_filtro_lote)
+        self._popular_filtro_lotes()
 
         toolbar.addStretch()
 
@@ -624,6 +631,32 @@ class EntradaAduboView(QWidget):
     def _fmt_num(self, val):
         return f"{val:_.0f}".replace("_", ".")
 
+    def _popular_filtro_lotes(self):
+        adubo_id = self.cmb_filtro_adubo.currentData()
+        fazenda_id = self.cmb_filtro_fazenda.currentData()
+        lote_id_antigo = self.cmb_filtro_lote.currentData()
+        self.cmb_filtro_lote.blockSignals(True)
+        self.cmb_filtro_lote.clear()
+        self.cmb_filtro_lote.addItem("Todos os lotes", None)
+        lotes = self.controller.listar_lotes_adubo(adubo_id, fazenda_id)
+        for l in lotes:
+            label = l["nome_lote"]
+            if l.get("entidade_nome"):
+                label += f" ({l['entidade_nome']})"
+            self.cmb_filtro_lote.addItem(label, l["id"])
+        idx = self.cmb_filtro_lote.findData(lote_id_antigo)
+        if idx >= 0:
+            self.cmb_filtro_lote.setCurrentIndex(idx)
+        self.cmb_filtro_lote.blockSignals(False)
+
+    def _on_filtro_adubo_changed(self):
+        self._popular_filtro_lotes()
+        self._carregar_dados()
+
+    def _on_filtro_fazenda_changed(self):
+        self._popular_filtro_lotes()
+        self._carregar_dados()
+
     def _carregar_dados(self):
         registros = self.controller.listar()
         adubo_id = self.cmb_filtro_adubo.currentData()
@@ -632,6 +665,9 @@ class EntradaAduboView(QWidget):
         fazenda_id = self.cmb_filtro_fazenda.currentData()
         if fazenda_id:
             registros = [r for r in registros if r["fazenda_id"] == fazenda_id]
+        lote_id = self.cmb_filtro_lote.currentData()
+        if lote_id:
+            registros = [r for r in registros if r["lote_id"] == lote_id]
         nome_adubo = self.cmb_filtro_adubo.currentText()
         nome_fazenda = self.cmb_filtro_fazenda.currentText()
         self.table.setRowCount(len(registros))
@@ -775,6 +811,9 @@ class EntradaAduboView(QWidget):
         fazenda_id = self.cmb_filtro_fazenda.currentData()
         if fazenda_id:
             registros = [r for r in registros if r["fazenda_id"] == fazenda_id]
+        lote_id = self.cmb_filtro_lote.currentData()
+        if lote_id:
+            registros = [r for r in registros if r["lote_id"] == lote_id]
         cabecalhos = ["ID", "Data", "Adubo", "Lote", "Fornecedor", "Fazenda",
                        "Bags", "Peso (kg)", "Placa", "Motorista", "NF"]
         dados = []

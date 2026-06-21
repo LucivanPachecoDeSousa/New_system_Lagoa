@@ -419,7 +419,7 @@ class EntradaCalcarioView(QWidget):
         self.date_filtro_inicio = QDateEdit()
         self.date_filtro_inicio.setCalendarPopup(True)
         self.date_filtro_inicio.setDisplayFormat("dd/MM/yyyy")
-        self.date_filtro_inicio.setDate(QDate.currentDate().addMonths(-1))
+        self.date_filtro_inicio.setDate(QDate(2025, 1, 1))
         self.date_filtro_inicio.setSpecialValueText("Início")
         self.date_filtro_inicio.setStyleSheet(self._date_filter_style())
         estilizar_calendario(self.date_filtro_inicio)
@@ -591,11 +591,6 @@ class EntradaCalcarioView(QWidget):
         self.lbl_resumo.setAlignment(Qt.AlignRight)
         card_layout.addWidget(self.lbl_resumo)
 
-        self.lbl_resumo_local = QLabel()
-        self.lbl_resumo_local.setStyleSheet("color: #2d6a2d; font-size: 12px; font-weight: 600; padding: 0 0 10px 0;")
-        self.lbl_resumo_local.setAlignment(Qt.AlignRight)
-        self.lbl_resumo_local.setVisible(False)
-        card_layout.addWidget(self.lbl_resumo_local)
 
         layout.addWidget(card)
 
@@ -677,28 +672,11 @@ class EntradaCalcarioView(QWidget):
             self.table.setItem(i, 8, QTableWidgetItem(r.get("motorista", "")))
             self.table.setItem(i, 9, QTableWidgetItem(r.get("numero_nf", "")))
             total_peso += r.get("peso_total_kg", 0) or 0
+        total_cargas = len(registros)
         self.lbl_resumo.setText(
-            f"{nome_tipo}  |  "
-            f"Total: {self._fmt_num(total_peso)} kg"
+            f"{self._fmt_num(total_peso)} kg  |  {total_cargas} carga(s)"
         )
         self._popular_filtro_local()
-        self._atualizar_resumo_local()
-
-    def _atualizar_resumo_local(self):
-        tipo_id = self.cmb_filtro_tipo.currentData()
-        resumo = self.controller.resumo_por_local(tipo_id)
-        linhas = []
-        for r in resumo:
-            local = r["local_descarga"] or "SEM LOCAL"
-            linhas.append(
-                f"{local}: {self._fmt_num(r['total_peso_kg'])} kg"
-            )
-        if linhas:
-            self.lbl_resumo_local.setText("  |  ".join(linhas))
-            self.lbl_resumo_local.setVisible(True)
-        else:
-            self.lbl_resumo_local.setVisible(False)
-
     def _popular_filtro_local(self):
         texto_atual = self.cmb_filtro_local.currentText()
         self.cmb_filtro_local.blockSignals(True)

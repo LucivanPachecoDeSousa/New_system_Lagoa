@@ -111,16 +111,26 @@ class EntradaAduboController:
         cursor.execute("SELECT id, nome FROM adubo_tipos ORDER BY nome")
         return [dict(row) for row in cursor.fetchall()]
 
-    def listar_lotes_adubo(self):
+    def listar_lotes_adubo(self, adubo_tipo_id=None, fazenda_id=None):
         conn = self.db.connect()
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT l.id, l.nome_lote, e.razao_social AS entidade_nome
+        # Only show lotes that actually have entries in entradas_adubo matching the filters
+        query = """
+            SELECT DISTINCT l.id, l.nome_lote, e.razao_social AS entidade_nome
             FROM lotes l
             LEFT JOIN entidades e ON l.entidade_id = e.id
+            JOIN entradas_adubo ea ON ea.lote_id = l.id
             WHERE l.tipo = 'adubo' AND l.ativo = 1
-            ORDER BY l.nome_lote
-        """)
+        """
+        params = []
+        if adubo_tipo_id:
+            query += " AND ea.adubo_tipo_id = ?"
+            params.append(adubo_tipo_id)
+        if fazenda_id:
+            query += " AND ea.fazenda_id = ?"
+            params.append(fazenda_id)
+        query += " ORDER BY l.nome_lote"
+        cursor.execute(query, params)
         return [dict(row) for row in cursor.fetchall()]
 
     def listar_entidades(self):
@@ -179,18 +189,17 @@ class EntradaAduboController:
             params2.append(adubo_tipo_id)
         entregue_query += " GROUP BY e.fazenda_id"
         cursor.execute(entregue_query, params2)
-        entregue = {row["fazenda_id"]: row["entregue_bag"] for row in cursor.fetchall()}
+        entregue = {row["fazenda_id"]: {"fazenda_nome": row["fazenda_nome"], "bags": row["entregue_bag"]} for row in cursor.fetchall()}
 
         todas = set(list(esperado.keys()) + list(entregue.keys()))
         resultado = []
         for fid in sorted(todas):
-            nome = (esperado.get(fid) or entregue.get(fid) or {}).get("fazenda_nome") if isinstance(esperado.get(fid), dict) else (entregue.get(fid) or {}).get("fazenda_nome")
-            e_bag = esperado.get(fid, {}).get("bags", 0) if isinstance(esperado.get(fid), dict) else 0
-            en_bag = entregue.get(fid, 0) or 0
+            e = esperado.get(fid) or entregue.get(fid) or {"fazenda_nome": "", "bags": 0}
+            en = entregue.get(fid) or esperado.get(fid) or {"fazenda_nome": "", "bags": 0}
             resultado.append({
-                "fazenda_nome": nome or "",
-                "esperado": e_bag,
-                "entregue": en_bag,
-                "saldo": e_bag - en_bag,
+                "fazenda_nome": e.get("fazenda_nome") or en.get("fazenda_nome", ""),
+                "esperado": e.get("bags", 0) or 0,
+                "entregue": en.get("bags", 0) or 0,
+                "saldo": (e.get("bags", 0) or 0) - (en.get("bags", 0) or 0),
             })
         return resultado
