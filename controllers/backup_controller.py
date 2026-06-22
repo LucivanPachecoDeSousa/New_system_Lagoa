@@ -9,7 +9,7 @@ class BackupController:
         self.db = Database()
 
     def _get_db_path(self):
-        return Path(__file__).parent.parent / "data" / "fazenda.db"
+        return self.db._get_db_path()
 
     def fazer_backup(self, destino: str) -> tuple:
         try:

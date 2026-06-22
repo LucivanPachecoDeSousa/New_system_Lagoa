@@ -419,22 +419,15 @@ class CarregamentoView(QWidget):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
 
-        self.txt_busca = QLineEdit()
-        self.txt_busca.setPlaceholderText("Buscar carregamento...")
-        self.txt_busca.setStyleSheet("""
-            QLineEdit {
-                padding: 10px 14px;
-                border: 2px solid #ddd;
-                border-radius: 10px;
-                font-size: 13px;
-                background: #fafafa;
-                min-width: 250px;
-                color: #333;
-            }
-            QLineEdit:focus { border-color: #2d6a2d; background: white; }
-        """)
-        self.txt_busca.returnPressed.connect(self._carregar_dados)
-        toolbar.addWidget(self.txt_busca)
+        self._lotes_filtro = self.controller.listar_lotes_carregamento()
+
+        self.cmb_busca_lote = QComboBox()
+        self.cmb_busca_lote.addItem("Todos os lotes", None)
+        for l in self._lotes_filtro:
+            self.cmb_busca_lote.addItem(l["nome_lote"], l["id"])
+        self.cmb_busca_lote.setStyleSheet(self._combo_style())
+        self.cmb_busca_lote.currentIndexChanged.connect(self._carregar_dados)
+        toolbar.addWidget(self.cmb_busca_lote)
 
         self.cmb_filtro_cliente = QComboBox()
         self.cmb_filtro_cliente.addItem("Todos os clientes", None)
@@ -442,7 +435,7 @@ class CarregamentoView(QWidget):
         for c in clientes:
             self.cmb_filtro_cliente.addItem(f"{c['razao_social']} ({c['cnpj_cpf']})", c["id"])
         self.cmb_filtro_cliente.setStyleSheet(self._combo_style())
-        self.cmb_filtro_cliente.currentIndexChanged.connect(self._carregar_dados)
+        self.cmb_filtro_cliente.currentIndexChanged.connect(self._on_filtro_cliente_changed)
         toolbar.addWidget(self.cmb_filtro_cliente)
 
         lbl_de = QLabel("De:")
@@ -598,12 +591,23 @@ class CarregamentoView(QWidget):
     def _fmt_money(self, val):
         return f"{val:_.2f}".replace(".", ",").replace("_", ".")
 
-    def _carregar_dados(self):
-        busca = self.txt_busca.text().strip()
+    def _on_filtro_cliente_changed(self):
         entidade_id = self.cmb_filtro_cliente.currentData()
+        self.cmb_busca_lote.blockSignals(True)
+        self.cmb_busca_lote.clear()
+        self.cmb_busca_lote.addItem("Todos os lotes", None)
+        for l in self._lotes_filtro:
+            if entidade_id is None or l["entidade_id"] == entidade_id:
+                self.cmb_busca_lote.addItem(l["nome_lote"], l["id"])
+        self.cmb_busca_lote.blockSignals(False)
+        self._carregar_dados()
+
+    def _carregar_dados(self):
+        entidade_id = self.cmb_filtro_cliente.currentData()
+        lote_id = self.cmb_busca_lote.currentData()
         data_inicio = self.dt_inicio.date().toString("yyyy-MM-dd") if self.dt_inicio.text() != self.dt_inicio.specialValueText() else None
         data_fim = self.dt_fim.date().toString("yyyy-MM-dd") if self.dt_fim.text() != self.dt_fim.specialValueText() else None
-        dados = self.controller.listar(busca=busca, entidade_id=entidade_id,
+        dados = self.controller.listar(entidade_id=entidade_id, lote_id=lote_id,
                                        data_inicio=data_inicio, data_fim=data_fim)
         self.table.setRowCount(len(dados))
         total_pesoTicket = total_pesoNF = total_nota = 0
@@ -696,11 +700,11 @@ class CarregamentoView(QWidget):
         if not path:
             return
 
-        busca = self.txt_busca.text().strip()
         entidade_id = self.cmb_filtro_cliente.currentData()
+        lote_id = self.cmb_busca_lote.currentData()
         data_inicio = self.dt_inicio.date().toString("yyyy-MM-dd") if self.dt_inicio.text() != self.dt_inicio.specialValueText() else None
         data_fim = self.dt_fim.date().toString("yyyy-MM-dd") if self.dt_fim.text() != self.dt_fim.specialValueText() else None
-        dados = self.controller.listar(busca=busca, entidade_id=entidade_id,
+        dados = self.controller.listar(entidade_id=entidade_id, lote_id=lote_id,
                                        data_inicio=data_inicio, data_fim=data_fim)
 
         wb = Workbook()

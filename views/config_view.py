@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, QTimer, QDate
 from PySide6.QtGui import QColor
 from controllers.usuario_controller import UsuarioController
 from controllers.backup_controller import BackupController
+from controllers.migracao_controller import MigracaoController
 from utils.widgets import UpperCaseLineEdit
 
 
@@ -208,6 +209,7 @@ class ConfigView(QWidget):
         super().__init__()
         self.usuario_controller = UsuarioController()
         self.backup_controller = BackupController()
+        self.migracao_controller = MigracaoController()
         self._setup_ui()
         self._carregar_dados()
         self._timer = QTimer(self)
@@ -348,7 +350,7 @@ class ConfigView(QWidget):
         sep.setStyleSheet("background: #eee;")
         card_layout.addWidget(sep)
 
-        backup_header = QLabel("BACKUP")
+        backup_header = QLabel("BACKUP / RESTAURAR")
         backup_header.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-top: 5px;")
         card_layout.addWidget(backup_header)
 
@@ -371,6 +373,42 @@ class ConfigView(QWidget):
 
         backup_buttons.addStretch()
         card_layout.addLayout(backup_buttons)
+
+        import_header = QLabel("IMPORTAR DADOS DE BACKUP ANTIGO")
+        import_header.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-top: 5px;")
+        card_layout.addWidget(import_header)
+
+        import_buttons = QHBoxLayout()
+        import_buttons.setSpacing(8)
+
+        btn_importar = QPushButton("Importar Backup Antigo")
+        btn_importar.setCursor(Qt.PointingHandCursor)
+        btn_importar.setFixedHeight(40)
+        btn_importar.setStyleSheet("""
+            QPushButton {
+                padding: 8px 20px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #8e44ad, stop:1 #a569bd);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: 700;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #a569bd, stop:1 #bb8fce);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #6c3483, stop:1 #8e44ad);
+            }
+        """)
+        btn_importar.clicked.connect(self._importar_backup_antigo)
+        import_buttons.addWidget(btn_importar)
+
+        import_buttons.addStretch()
+        card_layout.addLayout(import_buttons)
 
         layout.addWidget(card)
 
@@ -435,6 +473,31 @@ class ConfigView(QWidget):
             self._carregar_dados()
         else:
             self._msg_box(QMessageBox.Critical, "Erro", f"Falha ao restaurar:\n{resultado}")
+
+    def _importar_backup_antigo(self):
+        arquivo, _ = QFileDialog.getOpenFileName(
+            self, "Selecione o arquivo de backup antigo", "",
+            "Arquivos de banco (*.db *.sqlite);;Todos (*.*)"
+        )
+        if not arquivo:
+            return
+        confirm = self._msg_box(
+            QMessageBox.Question, "Importar Dados",
+            "Isso adicionará os dados do backup antigo ao sistema atual.\n"
+            "Dados existentes não serão alterados.\n\n"
+            "Tem certeza que deseja continuar?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if confirm != QMessageBox.Yes:
+            return
+        self._timer.stop()
+        resultado = self.migracao_controller.importar_backup(arquivo)
+        if resultado["sucesso"]:
+            self._msg_box(QMessageBox.Information, "Importação Concluída", resultado["mensagem"])
+        else:
+            self._msg_box(QMessageBox.Critical, "Erro na Importação", resultado["mensagem"])
+        self._carregar_dados()
+        self._timer.start(2000)
 
     def _btn_primary(self):
         return """

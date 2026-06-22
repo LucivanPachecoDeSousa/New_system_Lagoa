@@ -17,7 +17,9 @@ from views.manutencao_view import ManutencaoView
 from views.feno_view import FenoView
 from views.vendas_view import VendasView
 from views.previsao_semanal_widget import PrevisaoSemanalWidget
+from views.cambio_widget import CambioWidget
 from services.clima_service import obter_localizacao, obter_clima
+from services.cambio_service import obter_cambio
 
 
 class ClimaWorker(QObject):
@@ -34,6 +36,17 @@ class ClimaWorker(QObject):
             self.finished.emit({"local": local, **clima})
         else:
             self.finished.emit({"local": local, "erro": "Clima indisponível"})
+
+
+class CambioWorker(QObject):
+    finished = Signal(dict)
+
+    def run(self):
+        dados = obter_cambio()
+        if dados:
+            self.finished.emit(dados)
+        else:
+            self.finished.emit({"erro": "Câmbio indisponível"})
 
 
 class BackgroundWidget(QWidget):
@@ -203,10 +216,19 @@ class MainWindow(QMainWindow):
         self.stack.setStyleSheet("background: transparent;")
         content_layout.addWidget(self.stack, 1)
 
-        # previsao semanal fora do card
+        # previsao semanal e cambio fora do card
+        info_layout = QHBoxLayout()
+        info_layout.setSpacing(10)
+
         self._previsao_widget = PrevisaoSemanalWidget()
         self._previsao_widget.setVisible(False)
-        content_layout.addWidget(self._previsao_widget)
+        info_layout.addWidget(self._previsao_widget, 1)
+
+        self._cambio_widget = CambioWidget()
+        self._cambio_widget.setVisible(False)
+        info_layout.addWidget(self._cambio_widget, 0, Qt.AlignRight)
+
+        content_layout.addLayout(info_layout)
 
         sair_layout = QHBoxLayout()
         sair_layout.setContentsMargins(10, 2, 10, 2)
@@ -278,6 +300,12 @@ class MainWindow(QMainWindow):
         self._timer_clima.timeout.connect(self._atualizar_clima)
         self._timer_clima.start(1800000)
 
+        # cambio
+        self._atualizar_cambio()
+        self._timer_cambio = QTimer(self)
+        self._timer_cambio.timeout.connect(self._atualizar_cambio)
+        self._timer_cambio.start(600000)
+
     def _create_status_bar(self):
         status = QStatusBar()
         status.setStyleSheet("""
@@ -318,6 +346,24 @@ class MainWindow(QMainWindow):
         if previsao:
             self._previsao_widget.definir_previsao(previsao)
             self._previsao_widget.setVisible(True)
+
+    def _atualizar_cambio(self):
+        self._cambio_thread = QThread()
+        self._cambio_worker = CambioWorker()
+        self._cambio_worker.moveToThread(self._cambio_thread)
+        self._cambio_thread.started.connect(self._cambio_worker.run)
+        self._cambio_worker.finished.connect(self._exibir_cambio)
+        self._cambio_worker.finished.connect(self._cambio_thread.quit)
+        self._cambio_worker.finished.connect(self._cambio_worker.deleteLater)
+        self._cambio_thread.finished.connect(self._cambio_thread.deleteLater)
+        self._cambio_thread.start()
+
+    def _exibir_cambio(self, dados):
+        if "erro" in dados:
+            self._cambio_widget.setVisible(False)
+            return
+        self._cambio_widget.definir_cambio(dados)
+        self._cambio_widget.setVisible(True)
 
     def _nav_btn_style(self):
         return """

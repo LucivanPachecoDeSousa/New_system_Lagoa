@@ -5,7 +5,7 @@ class CarregamentoController:
     def __init__(self):
         self.db = Database()
 
-    def listar(self, busca="", entidade_id=None, data_inicio=None, data_fim=None, apenas_ativos=True):
+    def listar(self, busca="", entidade_id=None, lote_id=None, data_inicio=None, data_fim=None, apenas_ativos=True):
         conn = self.db.connect()
         cursor = conn.cursor()
         query = """
@@ -21,6 +21,9 @@ class CarregamentoController:
         if entidade_id:
             conds.append("c.entidade_id = ?")
             params.append(entidade_id)
+        if lote_id:
+            conds.append("c.lote_id = ?")
+            params.append(lote_id)
         if data_inicio:
             conds.append("c.data >= ?")
             params.append(data_inicio)
@@ -133,17 +136,22 @@ class CarregamentoController:
         """)
         return [dict(row) for row in cursor.fetchall()]
 
-    def listar_lotes_carregamento(self):
+    def listar_lotes_carregamento(self, entidade_id=None):
         conn = self.db.connect()
         cursor = conn.cursor()
-        cursor.execute("""
+        query = """
             SELECT l.id, l.nome_lote, l.valor_unitario,
                    l.entidade_id, e.razao_social AS entidade_nome
             FROM lotes l
             LEFT JOIN entidades e ON l.entidade_id = e.id
             WHERE l.tipo = 'carregamento' AND l.ativo = 1
-            ORDER BY l.nome_lote
-        """)
+        """
+        params = []
+        if entidade_id:
+            query += " AND l.entidade_id = ?"
+            params.append(entidade_id)
+        query += " ORDER BY l.nome_lote"
+        cursor.execute(query, params)
         return [dict(row) for row in cursor.fetchall()]
 
 

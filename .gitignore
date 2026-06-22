@@ -6,3 +6,12 @@ __pycache__/
 data/nfs/
 *.xlsx
 
+# Build artifacts
+build/
+dist/
+*.spec
+instalador/output/
+instalador/icone.ico
+instalador/SistemaFazenda/
+instalador/*.bmp
+
