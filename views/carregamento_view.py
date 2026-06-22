@@ -419,12 +419,13 @@ class CarregamentoView(QWidget):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
 
-        self._lotes_filtro = self.controller.listar_lotes_carregamento()
+        self._lotes_filtro = self.controller.listar_lotes_carregamento(apenas_ativos=False)
 
         self.cmb_busca_lote = QComboBox()
         self.cmb_busca_lote.addItem("Todos os lotes", None)
         for l in self._lotes_filtro:
-            self.cmb_busca_lote.addItem(l["nome_lote"], l["id"])
+            nome = l["nome_lote"] + (" (inativo)" if not l["ativo"] else "")
+            self.cmb_busca_lote.addItem(nome, l["id"])
         self.cmb_busca_lote.setStyleSheet(self._combo_style())
         self.cmb_busca_lote.currentIndexChanged.connect(self._carregar_dados)
         toolbar.addWidget(self.cmb_busca_lote)
@@ -598,7 +599,8 @@ class CarregamentoView(QWidget):
         self.cmb_busca_lote.addItem("Todos os lotes", None)
         for l in self._lotes_filtro:
             if entidade_id is None or l["entidade_id"] == entidade_id:
-                self.cmb_busca_lote.addItem(l["nome_lote"], l["id"])
+                nome = l["nome_lote"] + (" (inativo)" if not l["ativo"] else "")
+                self.cmb_busca_lote.addItem(nome, l["id"])
         self.cmb_busca_lote.blockSignals(False)
         self._carregar_dados()
 

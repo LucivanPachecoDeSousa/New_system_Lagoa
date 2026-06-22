@@ -136,21 +136,24 @@ class CarregamentoController:
         """)
         return [dict(row) for row in cursor.fetchall()]
 
-    def listar_lotes_carregamento(self, entidade_id=None):
+    def listar_lotes_carregamento(self, entidade_id=None, apenas_ativos=True):
         conn = self.db.connect()
         cursor = conn.cursor()
         query = """
             SELECT l.id, l.nome_lote, l.valor_unitario,
-                   l.entidade_id, e.razao_social AS entidade_nome
+                   l.entidade_id, l.ativo,
+                   e.razao_social AS entidade_nome
             FROM lotes l
             LEFT JOIN entidades e ON l.entidade_id = e.id
-            WHERE l.tipo = 'carregamento' AND l.ativo = 1
+            WHERE l.tipo = 'carregamento'
         """
         params = []
+        if apenas_ativos:
+            query += " AND l.ativo = 1"
         if entidade_id:
             query += " AND l.entidade_id = ?"
             params.append(entidade_id)
-        query += " ORDER BY l.nome_lote"
+        query += " ORDER BY l.ativo DESC, l.nome_lote"
         cursor.execute(query, params)
         return [dict(row) for row in cursor.fetchall()]
 
