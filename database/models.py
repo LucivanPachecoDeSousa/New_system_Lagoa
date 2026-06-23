@@ -168,11 +168,16 @@ def criar_tabelas():
             transportadora TEXT NOT NULL DEFAULT '',
             peso_kg REAL NOT NULL DEFAULT 0,
             metros_cubicos REAL NOT NULL DEFAULT 0,
+            unidade TEXT NOT NULL DEFAULT 'M³',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             ativo INTEGER DEFAULT 1
         )
     """)
+    try:
+        cursor.execute("ALTER TABLE materiais_construcao ADD COLUMN unidade TEXT NOT NULL DEFAULT 'M³'")
+    except Exception:
+        pass
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS entradas_adubo (

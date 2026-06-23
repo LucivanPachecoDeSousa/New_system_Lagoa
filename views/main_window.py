@@ -145,7 +145,7 @@ class MainWindow(QMainWindow):
         btn_carregamentos.clicked.connect(lambda: self.navigate_to(CarregamentoView()))
         top_layout.addWidget(btn_carregamentos)
 
-        btn_material = QPushButton("Materiais")
+        btn_material = QPushButton("Recebimentos Gerais")
         btn_material.setCursor(Qt.PointingHandCursor)
         btn_material.setStyleSheet(self._nav_btn_style())
         btn_material.clicked.connect(lambda: self.navigate_to(MaterialConstrucaoView()))

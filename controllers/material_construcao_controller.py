@@ -40,8 +40,8 @@ class MaterialConstrucaoController:
         material_id = self._obter_material_id(dados["material"])
         cursor.execute(
             """INSERT INTO materiais_construcao
-               (data, material_id, empresa_fornecedora, transportadora, peso_kg, metros_cubicos)
-               VALUES (?, ?, ?, ?, ?, ?)""",
+               (data, material_id, empresa_fornecedora, transportadora, peso_kg, metros_cubicos, unidade)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
                 dados["data"],
                 material_id,
@@ -49,6 +49,7 @@ class MaterialConstrucaoController:
                 dados.get("transportadora", ""),
                 dados.get("peso_kg", 0),
                 dados.get("metros_cubicos", 0),
+                dados.get("unidade", "M³"),
             ),
         )
         conn.commit()
@@ -62,7 +63,7 @@ class MaterialConstrucaoController:
             """UPDATE materiais_construcao
                SET data = ?, material_id = ?, empresa_fornecedora = ?,
                    transportadora = ?, peso_kg = ?, metros_cubicos = ?,
-                   updated_at = CURRENT_TIMESTAMP
+                   unidade = ?, updated_at = CURRENT_TIMESTAMP
                WHERE id = ?""",
             (
                 dados["data"],
@@ -71,6 +72,7 @@ class MaterialConstrucaoController:
                 dados.get("transportadora", ""),
                 dados.get("peso_kg", 0),
                 dados.get("metros_cubicos", 0),
+                dados.get("unidade", "M³"),
                 registro_id,
             ),
         )
@@ -100,4 +102,10 @@ class MaterialConstrucaoController:
         conn = self.db.connect()
         cursor = conn.cursor()
         cursor.execute("SELECT id, nome FROM material_construcao_tipos ORDER BY nome")
+        return [dict(row) for row in cursor.fetchall()]
+
+    def listar_entidades(self):
+        conn = self.db.connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, razao_social, cnpj_cpf FROM entidades WHERE ativo = 1 ORDER BY razao_social")
         return [dict(row) for row in cursor.fetchall()]

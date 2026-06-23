@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
     QMessageBox, QComboBox, QFrame, QDialog, QInputDialog,
     QAbstractItemView, QGraphicsDropShadowEffect, QDoubleSpinBox,
-    QDateEdit,
+    QDateEdit, QSizePolicy,
 )
 from PySide6.QtCore import Qt, QTimer, QDate
 from PySide6.QtGui import QColor
@@ -106,19 +106,29 @@ class MaterialConstrucaoDialog(QDialog):
         lbl_fornecedora.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;")
         card_layout.addWidget(lbl_fornecedora)
 
-        self.txt_fornecedora = UpperCaseLineEdit()
-        self.txt_fornecedora.setPlaceholderText("Nome da empresa fornecedora")
-        self.txt_fornecedora.setStyleSheet(self._input_style())
-        card_layout.addWidget(self.txt_fornecedora)
+        self.cmb_fornecedora = QComboBox()
+        self.cmb_fornecedora.setEditable(True)
+        self.cmb_fornecedora.setInsertPolicy(QComboBox.NoInsert)
+        self.cmb_fornecedora.lineEdit().setPlaceholderText("Selecione ou digite a fornecedora")
+        self.cmb_fornecedora.setStyleSheet(self._input_style())
+        self.cmb_fornecedora.addItem("Selecione...", None)
+        for e in self.controller.listar_entidades():
+            self.cmb_fornecedora.addItem(f"{e['razao_social']} ({e['cnpj_cpf']})", e["id"])
+        card_layout.addWidget(self.cmb_fornecedora)
 
         lbl_transportadora = QLabel("TRANSPORTADORA")
         lbl_transportadora.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;")
         card_layout.addWidget(lbl_transportadora)
 
-        self.txt_transportadora = UpperCaseLineEdit()
-        self.txt_transportadora.setPlaceholderText("Nome da transportadora")
-        self.txt_transportadora.setStyleSheet(self._input_style())
-        card_layout.addWidget(self.txt_transportadora)
+        self.cmb_transportadora = QComboBox()
+        self.cmb_transportadora.setEditable(True)
+        self.cmb_transportadora.setInsertPolicy(QComboBox.NoInsert)
+        self.cmb_transportadora.lineEdit().setPlaceholderText("Selecione ou digite a transportadora")
+        self.cmb_transportadora.setStyleSheet(self._input_style())
+        self.cmb_transportadora.addItem("Selecione...", None)
+        for e in self.controller.listar_entidades():
+            self.cmb_transportadora.addItem(f"{e['razao_social']} ({e['cnpj_cpf']})", e["id"])
+        card_layout.addWidget(self.cmb_transportadora)
 
         valores_layout = QHBoxLayout()
         valores_layout.setSpacing(15)
@@ -150,11 +160,14 @@ class MaterialConstrucaoDialog(QDialog):
         vl_peso.addWidget(self.spin_peso)
         valores_layout.addLayout(vl_peso)
 
-        vl_metros = QVBoxLayout()
-        vl_metros.setSpacing(4)
-        lbl_metros = QLabel("METRAGEM (M³)")
-        lbl_metros.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;")
-        vl_metros.addWidget(lbl_metros)
+        vl_qtd = QVBoxLayout()
+        vl_qtd.setSpacing(4)
+        lbl_qtd = QLabel("QUANTIDADE")
+        lbl_qtd.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;")
+        vl_qtd.addWidget(lbl_qtd)
+
+        qtd_row = QHBoxLayout()
+        qtd_row.setSpacing(8)
 
         self.spin_metros = QDoubleSpinBox()
         self.spin_metros.setRange(0, 999999.999)
@@ -174,8 +187,38 @@ class MaterialConstrucaoDialog(QDialog):
                 background: white;
             }
         """)
-        vl_metros.addWidget(self.spin_metros)
-        valores_layout.addLayout(vl_metros)
+        qtd_row.addWidget(self.spin_metros)
+
+        self.cmb_unidade = QComboBox()
+        self.cmb_unidade.addItem("Metros (m)", "M")
+        self.cmb_unidade.addItem("Metros Cúbicos (m³)", "M³")
+        self.cmb_unidade.setCurrentIndex(1)
+        self.cmb_unidade.setFixedHeight(44)
+        self.cmb_unidade.setMinimumWidth(160)
+        self.cmb_unidade.setStyleSheet("""
+            QComboBox {
+                padding: 10px 14px;
+                border: 2px solid #ddd;
+                border-radius: 10px;
+                font-size: 14px;
+                background: #fafafa;
+                color: #000;
+            }
+            QComboBox:focus {
+                border-color: #2d6a2d;
+                background: white;
+            }
+            QComboBox QAbstractItemView {
+                color: #000;
+                background: white;
+                selection-background-color: #e6e6e6;
+                selection-color: #000;
+            }
+        """)
+        qtd_row.addWidget(self.cmb_unidade)
+
+        vl_qtd.addLayout(qtd_row)
+        valores_layout.addLayout(vl_qtd)
 
         card_layout.addLayout(valores_layout)
 
@@ -260,10 +303,26 @@ class MaterialConstrucaoDialog(QDialog):
             self.cmb_material.setCurrentIndex(idx)
         else:
             self.cmb_material.setCurrentText(r.get("material_nome", ""))
-        self.txt_fornecedora.setText(r.get("empresa_fornecedora", ""))
-        self.txt_transportadora.setText(r.get("transportadora", ""))
+        fornecedora = r.get("empresa_fornecedora", "")
+        idx = self.cmb_fornecedora.findText(fornecedora, Qt.MatchStartsWith)
+        if idx >= 0:
+            self.cmb_fornecedora.setCurrentIndex(idx)
+        else:
+            self.cmb_fornecedora.setEditText(fornecedora)
+
+        transportadora = r.get("transportadora", "")
+        idx = self.cmb_transportadora.findText(transportadora, Qt.MatchStartsWith)
+        if idx >= 0:
+            self.cmb_transportadora.setCurrentIndex(idx)
+        else:
+            self.cmb_transportadora.setEditText(transportadora)
+
         self.spin_peso.setValue(r.get("peso_kg", 0))
         self.spin_metros.setValue(r.get("metros_cubicos", 0))
+        unidade = r.get("unidade", "M³")
+        idx = self.cmb_unidade.findData(unidade)
+        if idx >= 0:
+            self.cmb_unidade.setCurrentIndex(idx)
 
     def _validar_salvar(self):
         material = self.cmb_material.currentText().strip()
@@ -287,13 +346,20 @@ class MaterialConstrucaoDialog(QDialog):
         self.accept()
 
     def obter_dados(self):
+        fornecedora = self.cmb_fornecedora.currentText().strip()
+        if fornecedora in ("", "Selecione..."):
+            fornecedora = ""
+        transportadora = self.cmb_transportadora.currentText().strip()
+        if transportadora in ("", "Selecione..."):
+            transportadora = ""
         return {
             "data": self.date_data.date().toString("yyyy-MM-dd"),
             "material": self.cmb_material.currentText().strip().upper(),
-            "empresa_fornecedora": self.txt_fornecedora.text().strip(),
-            "transportadora": self.txt_transportadora.text().strip(),
+            "empresa_fornecedora": fornecedora,
+            "transportadora": transportadora,
             "peso_kg": self.spin_peso.value(),
             "metros_cubicos": self.spin_metros.value(),
+            "unidade": self.cmb_unidade.currentData(),
         }
 
     def keyPressEvent(self, event):
@@ -319,7 +385,7 @@ class MaterialConstrucaoView(QWidget):
         layout.setContentsMargins(30, 20, 30, 20)
         layout.setSpacing(15)
 
-        header = QLabel("Materiais de Construção")
+        header = QLabel("Recebimentos Gerais")
         header.setStyleSheet("color: white; font-size: 22px; font-weight: 700; letter-spacing: 2px;")
         layout.addWidget(header)
 
@@ -434,9 +500,9 @@ class MaterialConstrucaoView(QWidget):
         card_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(7)
+        self.table.setColumnCount(8)
         self.table.setHorizontalHeaderLabels(
-            ["ID", "Data", "Material", "Fornecedora", "Transportadora", "Peso (kg)", "M³"]
+            ["ID", "Data", "Material", "Fornecedora", "Transportadora", "Peso (kg)", "Quantidade", "Unidade"]
         )
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -453,6 +519,7 @@ class MaterialConstrucaoView(QWidget):
         header_view.setSectionResizeMode(4, QHeaderView.Stretch)
         header_view.setSectionResizeMode(5, QHeaderView.ResizeToContents)
         header_view.setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        header_view.setSectionResizeMode(7, QHeaderView.ResizeToContents)
 
         self.table.setStyleSheet("""
             QTableWidget {
@@ -460,12 +527,12 @@ class MaterialConstrucaoView(QWidget):
                 border-radius: 10px;
                 background: #ffffff;
                 gridline-color: transparent;
-                font-size: 13px;
+                font-size: 14px;
                 color: #000;
                 selection-background-color: #d4d4d4;
             }
             QTableWidget::item {
-                padding: 8px 14px;
+                padding: 10px 16px;
             }
             QTableWidget::item:selected {
                 background: #d4d4d4;
@@ -477,12 +544,12 @@ class MaterialConstrucaoView(QWidget):
             QHeaderView::section {
                 background: #f5f7f5;
                 color: #1a3a1a;
-                padding: 10px 14px;
+                padding: 12px 16px;
                 border: none;
                 border-bottom: 2px solid #2d6a2d;
                 border-right: 1px solid #e8e8e8;
                 font-weight: 700;
-                font-size: 12px;
+                font-size: 13px;
                 letter-spacing: 0.5px;
             }
             QHeaderView::section:last {
@@ -496,7 +563,7 @@ class MaterialConstrucaoView(QWidget):
         card_layout.addWidget(self.table)
 
         self.lbl_resumo = QLabel()
-        self.lbl_resumo.setStyleSheet("color: #1a3a1a; font-size: 14px; font-weight: 700; padding: 10px 0;")
+        self.lbl_resumo.setStyleSheet("color: #1a3a1a; font-size: 16px; font-weight: 700; padding: 10px 0;")
         self.lbl_resumo.setAlignment(Qt.AlignRight)
         card_layout.addWidget(self.lbl_resumo)
 
@@ -548,7 +615,7 @@ class MaterialConstrucaoView(QWidget):
         nome_material = self.cmb_filtro_material.currentText()
 
         self.table.setRowCount(len(registros))
-        total_peso = total_metros = 0
+        total_peso = total_quantidade = 0
         for i, r in enumerate(registros):
             self.table.setItem(i, 0, QTableWidgetItem(str(r["id"])))
             qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
@@ -559,15 +626,16 @@ class MaterialConstrucaoView(QWidget):
             self.table.setItem(i, 4, QTableWidgetItem(r.get("transportadora", "")))
             self.table.setItem(i, 5, QTableWidgetItem(self._fmt_num(r.get('peso_kg', 0))))
             self.table.setItem(i, 6, QTableWidgetItem(f"{r.get('metros_cubicos', 0):.2f}"))
+            self.table.setItem(i, 7, QTableWidgetItem(r.get('unidade', 'M³')))
             total_peso += r.get("peso_kg", 0) or 0
-            total_metros += r.get("metros_cubicos", 0) or 0
+            total_quantidade += r.get("metros_cubicos", 0) or 0
         if nome_material == "Todos os materiais":
             self.lbl_resumo.setText(
-                f"Total: {self._fmt_num(total_peso)} kg  |  {total_metros:.3f} m³"
+                f"Total: {self._fmt_num(total_peso)} kg  |  {total_quantidade:.3f} total"
             )
         else:
             self.lbl_resumo.setText(
-                f"{nome_material}  |  Total: {self._fmt_num(total_peso)} kg  |  {total_metros:.3f} m³"
+                f"{nome_material}  |  Total: {self._fmt_num(total_peso)} kg  |  {total_quantidade:.3f} total"
             )
 
     def _msg_box(self, icone, titulo, texto, botoes=None):
@@ -654,7 +722,7 @@ class MaterialConstrucaoView(QWidget):
         material_id = self.cmb_filtro_material.currentData()
         if material_id:
             registros = [r for r in registros if r["material_id"] == material_id]
-        cabecalhos = ["ID", "Data", "Material", "Fornecedora", "Transportadora", "Peso (kg)", "M³"]
+        cabecalhos = ["ID", "Data", "Material", "Fornecedora", "Transportadora", "Peso (kg)", "Quantidade", "Unidade"]
         dados = []
         for r in registros:
             qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
@@ -663,5 +731,6 @@ class MaterialConstrucaoView(QWidget):
                 r["id"], data_str, r.get("material_nome", ""),
                 r.get("empresa_fornecedora", ""), r.get("transportadora", ""),
                 r.get("peso_kg", 0), r.get("metros_cubicos", 0),
+                r.get("unidade", "M³"),
             ))
-        exportar_excel(self, "relatorio_materiais.xlsx", "Materiais", cabecalhos, dados)
+        exportar_excel(self, "relatorio_materiais.xlsx", "Recebimentos", cabecalhos, dados)
