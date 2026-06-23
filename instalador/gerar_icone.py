@@ -98,7 +98,7 @@ def criar_wizard_bmp(caminho: str, largura: int, altura: int, tipo: str = "large
             font2 = ImageFont.truetype("arial.ttf", 14)
         except:
             font2 = ImageFont.load_default()
-        titulo = "Sistema Fazenda"
+        titulo = "Sistema Campo Fértil"
         draw.text((cx, altura - 60), titulo, fill=(255, 255, 255, 230), font=font2, anchor="mm")
         draw.text((cx, altura - 40), "Gestao Agropecuaria", fill=(255, 255, 255, 150), font=font2, anchor="mm")
 

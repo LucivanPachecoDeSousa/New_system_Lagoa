@@ -35,7 +35,7 @@ class LoginView(QDialog):
         self.setup_ui()
 
     def setup_ui(self):
-        self.setWindowTitle("Sistema Fazenda - Login")
+        self.setWindowTitle("Sistema Campo Fértil - Login")
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
@@ -81,13 +81,13 @@ class LoginView(QDialog):
 
         left_layout.addSpacing(15)
 
-        brand = QLabel("FAZENDA")
+        brand = QLabel("CAMPO FÉRTIL")
         brand.setAlignment(Qt.AlignCenter)
         brand.setStyleSheet("""
             color: white;
-            font-size: 42px;
+            font-size: 36px;
             font-weight: 900;
-            letter-spacing: 12px;
+            letter-spacing: 8px;
         """)
         left_layout.addWidget(brand)
 

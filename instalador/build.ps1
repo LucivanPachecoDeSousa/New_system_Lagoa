@@ -10,7 +10,7 @@ $instalador = $PSScriptRoot
 $output = Join-Path $instalador "output"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Build - Sistema Fazenda" -ForegroundColor Cyan
+Write-Host "  Build - Sistema Campo Fértil" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

@@ -1,11 +1,11 @@
-; Inno Setup Script - Sistema Fazenda
+; Inno Setup Script - Sistema Campo Fértil
 ; Professional Windows Installer
 
-#define MyAppName "Sistema Fazenda"
+#define MyAppName "Sistema Campo Fértil"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "Sistema Fazenda Ltda"
-#define MyAppURL "https://sistemafazenda.com.br"
-#define MyAppExeName "SistemaFazenda.exe"
+#define MyAppPublisher "Sistema Campo Fértil"
+#define MyAppURL ""
+#define MyAppExeName "SistemaCampoFertil.exe"
 #define MyAppAssocName MyAppName + " File"
 
 [Setup]
@@ -22,7 +22,7 @@ DisableDirPage=auto
 LicenseFile=
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=.
-OutputBaseFilename=SistemaFazenda_Instalador_v{#MyAppVersion}
+OutputBaseFilename=SistemaCampoFertil_Instalador_v{#MyAppVersion}
 SetupIconFile=icone.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/max

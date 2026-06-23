@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
         self.setup_ui()
 
     def setup_ui(self):
-        self.setWindowTitle(f"Sistema Fazenda - {self.user['nome_completo']}")
+        self.setWindowTitle(f"Sistema Campo Fértil - {self.user['nome_completo']}")
         self.setMinimumSize(1024, 700)
 
         self._create_central_widget()
@@ -271,7 +271,7 @@ class MainWindow(QMainWindow):
         icon.setStyleSheet("font-size: 70px;")
         card_inner.addWidget(icon)
 
-        title = QLabel("Fazenda Lagoa Bonita")
+        title = QLabel("Campo Fértil")
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("color: #000; font-size: 26px; font-weight: 900; letter-spacing: 4px;")
         card_inner.addWidget(title)

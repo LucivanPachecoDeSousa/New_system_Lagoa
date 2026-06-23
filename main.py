@@ -12,7 +12,7 @@ from views.main_window import MainWindow
 
 def main():
     app = QApplication(sys.argv)
-    app.setApplicationName("Sistema Fazenda")
+    app.setApplicationName("Sistema Campo Fértil")
     app.setStyle("Fusion")
     app.setFont(QFont("Segoe UI", 11))
 
