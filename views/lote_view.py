@@ -51,7 +51,7 @@ class LoteDialog(QDialog):
 
         title = QLabel("Editar Lote" if self.lote else "Novo Lote")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #1a3a1a; font-size: 20px; font-weight: 700; letter-spacing: 2px;")
+        title.setStyleSheet("color: #4E342E; font-size: 20px; font-weight: 700; letter-spacing: 2px;")
         card_layout.addWidget(title)
 
         lbl_tipo = QLabel("TIPO")
@@ -255,7 +255,7 @@ class LoteDialog(QDialog):
         total = sum(d["spin"].value() for d in self.fazenda_spins.values())
         pedido = self.spn_quantidade.value()
         self.lbl_total_rateio.setText(f"Total rateado: {total:.3f} / {pedido:.3f}")
-        cor = "#e74c3c" if total > pedido else "#2d6a2d" if total == pedido and total > 0 else "#888"
+        cor = "#e74c3c" if total > pedido else "#795548" if total == pedido and total > 0 else "#888"
         self.lbl_total_rateio.setStyleSheet(f"color: {cor}; font-size: 12px; font-style: italic;")
 
     def _preencher(self, l):
@@ -362,10 +362,10 @@ class LoteDialog(QDialog):
             QMessageBox { background: white; color: #333; }
             QMessageBox QLabel { color: #333; font-size: 13px; }
             QPushButton {
-                padding: 8px 20px; background: #2d6a2d; color: white;
+                padding: 8px 20px; background: #795548; color: white;
                 border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
             }
-            QPushButton:hover { background: #3e8a3e; }
+            QPushButton:hover { background: #8D6E63; }
         """)
         return msg.exec()
 
@@ -380,7 +380,7 @@ class LoteDialog(QDialog):
                 color: #000;
             }
             QLineEdit:focus, QComboBox:focus, QDoubleSpinBox:focus {
-                border-color: #2d6a2d;
+                border-color: #795548;
                 background: white;
             }
             QComboBox::drop-down {
@@ -404,7 +404,7 @@ class LoteDialog(QDialog):
             QPushButton {
                 padding: 10px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #1a4a1a, stop:1 #2d6a2d);
+                    stop:0 #5D4037, stop:1 #795548);
                 color: white;
                 border: none;
                 border-radius: 10px;
@@ -414,11 +414,11 @@ class LoteDialog(QDialog):
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #2d6a2d, stop:1 #3e8a3e);
+                    stop:0 #795548, stop:1 #8D6E63);
             }
             QPushButton:pressed {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #0f3a0f, stop:1 #1a5a1a);
+                    stop:0 #3E2723, stop:1 #5D4037);
             }
         """
 
@@ -480,7 +480,7 @@ class LoteView(QWidget):
                 min-width: 160px;
                 color: #000;
             }
-            QComboBox:focus { border-color: #2d6a2d; background: white; }
+            QComboBox:focus { border-color: #795548; background: white; }
             QComboBox QAbstractItemView {
                 color: #000;
                 background: white;
@@ -503,7 +503,7 @@ class LoteView(QWidget):
                 min-width: 250px;
                 color: #333;
             }
-            QLineEdit:focus { border-color: #2d6a2d; background: white; }
+            QLineEdit:focus { border-color: #795548; background: white; }
         """)
         self.txt_busca.textChanged.connect(self._carregar_dados)
         toolbar.addWidget(self.txt_busca)
@@ -598,11 +598,11 @@ class LoteView(QWidget):
                 background: #dcdcdc;
             }
             QHeaderView::section {
-                background: #f5f7f5;
-                color: #1a3a1a;
+                background: #F5F0EB;
+                color: #4E342E;
                 padding: 10px 14px;
                 border: none;
-                border-bottom: 2px solid #2d6a2d;
+                border-bottom: 2px solid #795548;
                 border-right: 1px solid #e8e8e8;
                 font-weight: 700;
                 font-size: 12px;
@@ -652,7 +652,7 @@ class LoteView(QWidget):
             self.table.setItem(i, 7, QTableWidgetItem(dt))
             ativo = l.get("ativo", 1)
             status_item = QTableWidgetItem("Ativo" if ativo else "Inativo")
-            status_item.setForeground(QColor("#2d6a2d") if ativo else QColor("#e74c3c"))
+            status_item.setForeground(QColor("#795548") if ativo else QColor("#e74c3c"))
             self.table.setItem(i, 8, status_item)
 
     def _novo(self):
@@ -742,10 +742,10 @@ class LoteView(QWidget):
             QMessageBox { background: white; color: #333; }
             QMessageBox QLabel { color: #333; font-size: 13px; }
             QPushButton {
-                padding: 8px 20px; background: #2d6a2d; color: white;
+                padding: 8px 20px; background: #795548; color: white;
                 border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
             }
-            QPushButton:hover { background: #3e8a3e; }
+            QPushButton:hover { background: #8D6E63; }
         """)
         return msg.exec()
 
@@ -764,17 +764,17 @@ class LoteView(QWidget):
             QPushButton {
                 padding: 8px 20px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #1a4a1a, stop:1 #2d6a2d);
+                    stop:0 #5D4037, stop:1 #795548);
                 color: white; border: none; border-radius: 8px;
                 font-weight: 700; font-size: 12px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #2d6a2d, stop:1 #3e8a3e);
+                    stop:0 #795548, stop:1 #8D6E63);
             }
             QPushButton:pressed {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #0f3a0f, stop:1 #1a5a1a);
+                    stop:0 #3E2723, stop:1 #5D4037);
             }
         """
 
@@ -801,9 +801,9 @@ class LoteView(QWidget):
     def _btn_success(self):
         return """
             QPushButton {
-                padding: 8px 20px; background: #27ae60; color: white;
+                padding: 8px 20px; background: #795548; color: white;
                 border: none; border-radius: 8px; font-weight: 700; font-size: 12px;
             }
-            QPushButton:hover { background: #2ecc71; }
-            QPushButton:pressed { background: #1e8449; }
+            QPushButton:hover { background: #8D6E63; }
+            QPushButton:pressed { background: #5D4037; }
         """

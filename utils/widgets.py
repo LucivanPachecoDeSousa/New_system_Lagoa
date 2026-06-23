@@ -40,7 +40,7 @@ def estilizar_calendario(date_edit):
         QCalendarWidget QAbstractItemView:enabled {
             color: #000;
             background: white;
-            selection-background-color: #2d6a2d;
+            selection-background-color: #795548;
             selection-color: white;
         }
         QCalendarWidget QAbstractItemView:disabled {

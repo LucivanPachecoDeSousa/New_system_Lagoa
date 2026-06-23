@@ -51,7 +51,7 @@ class UsuarioDialog(QDialog):
 
         title = QLabel("Editar Usuário" if self.usuario else "Novo Usuário")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #1a3a1a; font-size: 20px; font-weight: 700; letter-spacing: 2px;")
+        title.setStyleSheet("color: #4E342E; font-size: 20px; font-weight: 700; letter-spacing: 2px;")
         card_layout.addWidget(title)
 
         lbl_user = QLabel("USUÁRIO")
@@ -164,7 +164,7 @@ class UsuarioDialog(QDialog):
                 color: #000;
             }
             QLineEdit:focus, QComboBox:focus {
-                border-color: #2d6a2d;
+                border-color: #795548;
                 background: white;
             }
             QComboBox QAbstractItemView {
@@ -180,7 +180,7 @@ class UsuarioDialog(QDialog):
             QPushButton {
                 padding: 10px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #1a4a1a, stop:1 #2d6a2d);
+                    stop:0 #5D4037, stop:1 #795548);
                 color: white;
                 border: none;
                 border-radius: 10px;
@@ -190,11 +190,11 @@ class UsuarioDialog(QDialog):
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #2d6a2d, stop:1 #3e8a3e);
+                    stop:0 #795548, stop:1 #8D6E63);
             }
             QPushButton:pressed {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #0f3a0f, stop:1 #1a5a1a);
+                    stop:0 #3E2723, stop:1 #5D4037);
             }
         """
 
@@ -325,11 +325,11 @@ class ConfigView(QWidget):
                 background: #dcdcdc;
             }
             QHeaderView::section {
-                background: #f5f7f5;
-                color: #1a3a1a;
+                background: #F5F0EB;
+                color: #4E342E;
                 padding: 10px 14px;
                 border: none;
-                border-bottom: 2px solid #2d6a2d;
+                border-bottom: 2px solid #795548;
                 border-right: 1px solid #e8e8e8;
                 font-weight: 700;
                 font-size: 12px;
@@ -430,7 +430,7 @@ class ConfigView(QWidget):
             }
             QPushButton {
                 padding: 8px 20px;
-                background: #2d6a2d;
+                background: #795548;
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -438,7 +438,7 @@ class ConfigView(QWidget):
                 min-width: 80px;
             }
             QPushButton:hover {
-                background: #3e8a3e;
+                background: #8D6E63;
             }
         """)
         return msg.exec()
@@ -504,7 +504,7 @@ class ConfigView(QWidget):
             QPushButton {
                 padding: 8px 20px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #1a4a1a, stop:1 #2d6a2d);
+                    stop:0 #5D4037, stop:1 #795548);
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -513,11 +513,11 @@ class ConfigView(QWidget):
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #2d6a2d, stop:1 #3e8a3e);
+                    stop:0 #795548, stop:1 #8D6E63);
             }
             QPushButton:pressed {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #0f3a0f, stop:1 #1a5a1a);
+                    stop:0 #3E2723, stop:1 #5D4037);
             }
         """
 

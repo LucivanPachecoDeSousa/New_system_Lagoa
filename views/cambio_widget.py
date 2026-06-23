@@ -37,7 +37,7 @@ class CambioWidget(QFrame):
     def definir_cambio(self, dados):
         def fmt(valor, variacao):
             seta = "▲" if variacao >= 0 else "▼"
-            cor = "#2ecc71" if variacao >= 0 else "#e74c3c"
+            cor = "#8D6E63" if variacao >= 0 else "#e74c3c"
             return f'R$ {valor:.2f} <span style="color:{cor}; font-size:11px;">{seta} {abs(variacao):.2f}%</span>'
 
         if "USD" in dados:

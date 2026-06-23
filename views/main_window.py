@@ -57,8 +57,8 @@ class BackgroundWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         gradient = QLinearGradient(0, 0, self.width(), 0)
-        gradient.setColorAt(0.0, QColor("#0f1f0f"))
-        gradient.setColorAt(0.4, QColor("#1a3a1a"))
+        gradient.setColorAt(0.0, QColor("#3E2723"))
+        gradient.setColorAt(0.4, QColor("#4E342E"))
         gradient.setColorAt(0.6, QColor("#8c8c8c"))
         gradient.setColorAt(1.0, QColor("#666666"))
         painter.fillRect(self.rect(), QBrush(gradient))
@@ -317,7 +317,7 @@ class MainWindow(QMainWindow):
         status = QStatusBar()
         status.setStyleSheet("""
             QStatusBar {
-                background: #0f1f0f;
+                background: #3E2723;
                 color: rgba(255,255,255,0.5);
                 padding: 4px;
                 font-size: 11px;

@@ -17,8 +17,8 @@ class BackgroundWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         gradient = QLinearGradient(0, 0, self.width(), 0)
-        gradient.setColorAt(0.0, QColor("#0f1f0f"))
-        gradient.setColorAt(0.4, QColor("#1a3a1a"))
+        gradient.setColorAt(0.0, QColor("#3E2723"))
+        gradient.setColorAt(0.4, QColor("#4E342E"))
         gradient.setColorAt(0.6, QColor("#f0f4f0"))
         gradient.setColorAt(1.0, QColor("#f8faf8"))
         painter.fillRect(self.rect(), QBrush(gradient))
@@ -265,7 +265,7 @@ class LoginView(QDialog):
                 color: #333;
             }}
             QLineEdit:focus {{
-                border-color: {"#e74c3c" if error else "#2d6a2d"};
+                border-color: {"#e74c3c" if error else "#795548"};
                 background: white;
             }}
             QLineEdit:hover {{
@@ -278,7 +278,7 @@ class LoginView(QDialog):
             QPushButton {
                 padding: 12px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #1a4a1a, stop:1 #2d6a2d);
+                    stop:0 #5D4037, stop:1 #795548);
                 color: white;
                 border: none;
                 border-radius: 10px;
@@ -288,11 +288,11 @@ class LoginView(QDialog):
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #2d6a2d, stop:1 #3e8a3e);
+                    stop:0 #795548, stop:1 #8D6E63);
             }
             QPushButton:pressed {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #0f3a0f, stop:1 #1a5a1a);
+                    stop:0 #3E2723, stop:1 #5D4037);
             }
         """
 

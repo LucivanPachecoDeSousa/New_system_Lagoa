@@ -69,9 +69,9 @@ def exportar_excel(parent, nome_sugerido, titulo_aba, cabecalhos, dados, col_dec
         QMessageBox { background: white; color: #333; }
         QMessageBox QLabel { color: #333; font-size: 13px; }
         QPushButton {
-            padding: 8px 20px; background: #2d6a2d; color: white;
+            padding: 8px 20px; background: #795548; color: white;
             border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
         }
-        QPushButton:hover { background: #3e8a3e; }
+        QPushButton:hover { background: #8D6E63; }
     """)
     msg.exec()

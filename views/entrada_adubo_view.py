@@ -54,7 +54,7 @@ class EntradaAduboDialog(QDialog):
 
         title = QLabel("Editar Entrada" if self.registro else "Nova Entrada de Adubo")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: #1a3a1a; font-size: 20px; font-weight: 700; letter-spacing: 2px;")
+        title.setStyleSheet("color: #4E342E; font-size: 20px; font-weight: 700; letter-spacing: 2px;")
         card_layout.addWidget(title)
 
         card_layout.addSpacing(10)
@@ -144,7 +144,7 @@ class EntradaAduboDialog(QDialog):
             QPushButton {
                 padding: 10px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #1a4a1a, stop:1 #2d6a2d);
+                    stop:0 #5D4037, stop:1 #795548);
                 color: white;
                 border: none;
                 border-radius: 10px;
@@ -154,7 +154,7 @@ class EntradaAduboDialog(QDialog):
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #2d6a2d, stop:1 #3e8a3e);
+                    stop:0 #795548, stop:1 #8D6E63);
             }
         """)
         btn_salvar.clicked.connect(self._validar_salvar)
@@ -265,7 +265,7 @@ class EntradaAduboDialog(QDialog):
                 color: #000;
             }
             QDateEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
-                border-color: #2d6a2d;
+                border-color: #795548;
                 background: white;
             }
             QDateEdit::drop-down {
@@ -285,7 +285,7 @@ class EntradaAduboDialog(QDialog):
                 color: #000;
             }
             QLineEdit:focus, QComboBox:focus {
-                border-color: #2d6a2d;
+                border-color: #795548;
                 background: white;
             }
             QComboBox QAbstractItemView {
@@ -341,10 +341,10 @@ class EntradaAduboDialog(QDialog):
             QMessageBox { background: white; }
             QMessageBox QLabel { color: #333; font-size: 13px; }
             QPushButton {
-                padding: 8px 20px; background: #2d6a2d; color: white;
+                padding: 8px 20px; background: #795548; color: white;
                 border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
             }
-            QPushButton:hover { background: #3e8a3e; }
+            QPushButton:hover { background: #8D6E63; }
         """)
         msg.exec()
 
@@ -448,7 +448,7 @@ class EntradaAduboView(QWidget):
             QPushButton {
                 padding: 8px 20px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #1a4a1a, stop:1 #2d6a2d);
+                    stop:0 #5D4037, stop:1 #795548);
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -457,11 +457,11 @@ class EntradaAduboView(QWidget):
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #2d6a2d, stop:1 #3e8a3e);
+                    stop:0 #795548, stop:1 #8D6E63);
             }
             QPushButton:pressed {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #0f3a0f, stop:1 #1a5a1a);
+                    stop:0 #3E2723, stop:1 #5D4037);
             }
         """)
         self.btn_novo.clicked.connect(self._novo)
@@ -512,11 +512,11 @@ class EntradaAduboView(QWidget):
         btn_exportar.setFixedHeight(40)
         btn_exportar.setStyleSheet("""
             QPushButton {
-                padding: 8px 16px; background: #27ae60; color: white;
+                padding: 8px 16px; background: #795548; color: white;
                 border: none; border-radius: 8px; font-weight: 700; font-size: 12px;
             }
-            QPushButton:hover { background: #2ecc71; }
-            QPushButton:pressed { background: #1e8449; }
+            QPushButton:hover { background: #8D6E63; }
+            QPushButton:pressed { background: #5D4037; }
         """)
         btn_exportar.clicked.connect(self._exportar)
         toolbar.addWidget(btn_exportar)
@@ -572,11 +572,11 @@ class EntradaAduboView(QWidget):
                 background: #dcdcdc;
             }
             QHeaderView::section {
-                background: #f5f7f5;
-                color: #1a3a1a;
+                background: #F5F0EB;
+                color: #4E342E;
                 padding: 10px 14px;
                 border: none;
-                border-bottom: 2px solid #2d6a2d;
+                border-bottom: 2px solid #795548;
                 border-right: 1px solid #e8e8e8;
                 font-weight: 700;
                 font-size: 12px;
@@ -593,12 +593,12 @@ class EntradaAduboView(QWidget):
         card_layout.addWidget(self.table)
 
         self.lbl_resumo = QLabel()
-        self.lbl_resumo.setStyleSheet("color: #1a3a1a; font-size: 14px; font-weight: 700; padding: 10px 0 2px 0;")
+        self.lbl_resumo.setStyleSheet("color: #4E342E; font-size: 14px; font-weight: 700; padding: 10px 0 2px 0;")
         self.lbl_resumo.setAlignment(Qt.AlignRight)
         card_layout.addWidget(self.lbl_resumo)
 
         self.lbl_resumo_fazendas = QLabel()
-        self.lbl_resumo_fazendas.setStyleSheet("color: #2d6a2d; font-size: 12px; font-weight: 600; padding: 0 0 10px 0;")
+        self.lbl_resumo_fazendas.setStyleSheet("color: #795548; font-size: 12px; font-weight: 600; padding: 0 0 10px 0;")
         self.lbl_resumo_fazendas.setAlignment(Qt.AlignRight)
         self.lbl_resumo_fazendas.setVisible(False)
         card_layout.addWidget(self.lbl_resumo_fazendas)
@@ -617,7 +617,7 @@ class EntradaAduboView(QWidget):
                 color: #000;
             }
             QComboBox:focus {
-                border-color: #2d6a2d;
+                border-color: #795548;
                 background: white;
             }
             QComboBox QAbstractItemView {
@@ -737,10 +737,10 @@ class EntradaAduboView(QWidget):
             QMessageBox { background: white; color: #333; }
             QMessageBox QLabel { color: #333; font-size: 13px; }
             QPushButton {
-                padding: 8px 20px; background: #2d6a2d; color: white;
+                padding: 8px 20px; background: #795548; color: white;
                 border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
             }
-            QPushButton:hover { background: #3e8a3e; }
+            QPushButton:hover { background: #8D6E63; }
         """)
         return msg.exec()
 
