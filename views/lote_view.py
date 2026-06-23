@@ -689,8 +689,6 @@ class LoteView(QWidget):
         if row < 0:
             self._msg_box(QMessageBox.Information, "Selecione", "Selecione um lote para encerrar.")
             return
-        if not self._confirmar_senha():
-            return
         lote_id = int(self.table.item(row, 0).text())
         nome = self.table.item(row, 3).text()
         ativo = self.table.item(row, 8).text() == "Ativo"
