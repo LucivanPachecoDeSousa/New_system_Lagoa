@@ -16,6 +16,7 @@ from views.entrada_calcario_view import EntradaCalcarioView
 from views.manutencao_view import ManutencaoView
 from views.feno_view import FenoView
 from views.vendas_view import VendasView
+from views.emprestimo_view import EmprestimoView
 from views.previsao_semanal_widget import PrevisaoSemanalWidget
 from views.cambio_widget import CambioWidget
 from services.clima_service import obter_localizacao, obter_clima
@@ -180,6 +181,12 @@ class MainWindow(QMainWindow):
         btn_vendas.setStyleSheet(self._nav_btn_style())
         btn_vendas.clicked.connect(lambda: self.navigate_to(VendasView()))
         top_layout.addWidget(btn_vendas)
+
+        btn_emprestimo = QPushButton("Empréstimos")
+        btn_emprestimo.setCursor(Qt.PointingHandCursor)
+        btn_emprestimo.setStyleSheet(self._nav_btn_style())
+        btn_emprestimo.clicked.connect(lambda: self.navigate_to(EmprestimoView()))
+        top_layout.addWidget(btn_emprestimo)
 
         btn_config = QPushButton("Configuração")
         btn_config.setCursor(Qt.PointingHandCursor)

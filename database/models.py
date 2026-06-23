@@ -316,6 +316,24 @@ def criar_tabelas():
     except Exception:
         pass
 
+    cursor.execute("DROP TABLE IF EXISTS emprestimos")
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS emprestimos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data DATE NOT NULL DEFAULT (date('now')),
+            tipo TEXT NOT NULL CHECK (tipo IN ('emprestimo', 'tomado')),
+            entidade TEXT NOT NULL DEFAULT '',
+            produto_descricao TEXT NOT NULL DEFAULT '',
+            quantidade INTEGER NOT NULL DEFAULT 0,
+            unidade TEXT NOT NULL DEFAULT 'un',
+            devolvido INTEGER NOT NULL DEFAULT 0,
+            observacao TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ativo INTEGER DEFAULT 1
+        )
+    """)
+
     conn.commit()
 
 def seed_admin():
