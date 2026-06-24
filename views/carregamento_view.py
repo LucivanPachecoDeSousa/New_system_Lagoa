@@ -119,6 +119,7 @@ class CarregamentoDialog(QDialog):
                     stop:0 #3E2723, stop:1 #5D4037);
             }
         """)
+        btn_salvar.setDefault(True)
         btn_salvar.clicked.connect(self._validar_salvar)
         btn_layout.addWidget(btn_salvar)
 
@@ -284,6 +285,7 @@ class CarregamentoDialog(QDialog):
         self.txt_chave_nf.setPlaceholderText("Chave de acesso da NF-e (44 dígitos)")
         self.txt_chave_nf.setStyleSheet(self._input_style())
         self.txt_chave_nf.setMaxLength(44)
+        self.txt_chave_nf.returnPressed.connect(self._validar_salvar)
         return self.txt_chave_nf
 
     def _create_valor_unitario(self):
