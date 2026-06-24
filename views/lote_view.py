@@ -61,6 +61,8 @@ class LoteDialog(QDialog):
         self.cmb_tipo.addItem("Carregamento", "carregamento")
         self.cmb_tipo.addItem("Adubo", "adubo")
         self.cmb_tipo.addItem("Calcário", "calcario")
+        self.cmb_tipo.addItem("Feno", "feno")
+        self.cmb_tipo.addItem("Pré-secado", "presecado")
         self.cmb_tipo.setStyleSheet(self._input_style())
         self.cmb_tipo.currentIndexChanged.connect(self._toggle_campos)
         card_layout.addWidget(lbl_tipo)
@@ -198,6 +200,45 @@ class LoteDialog(QDialog):
 
         self.fazenda_section = [lbl_fazendas, self.fazendas_widget, self.lbl_total_rateio]
 
+        # --- Talhões (apenas Feno/Pré-secado) ---
+        self.talhoes_section_widget = QWidget()
+        talhoes_section_layout = QVBoxLayout(self.talhoes_section_widget)
+        talhoes_section_layout.setContentsMargins(0, 0, 0, 0)
+        talhoes_section_layout.setSpacing(5)
+
+        talhoes_header = QHBoxLayout()
+        lbl_talhoes = QLabel("TALHÕES")
+        lbl_talhoes.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-top: 5px;")
+        talhoes_header.addWidget(lbl_talhoes)
+        talhoes_header.addStretch()
+
+        btn_add_talhao = QPushButton("+")
+        btn_add_talhao.setFixedSize(32, 32)
+        btn_add_talhao.setCursor(Qt.PointingHandCursor)
+        btn_add_talhao.setStyleSheet("""
+            QPushButton {
+                background: #795548; color: white;
+                border: none; border-radius: 16px;
+                font-weight: 700; font-size: 18px;
+            }
+            QPushButton:hover { background: #8D6E63; }
+            QPushButton:pressed { background: #5D4037; }
+        """)
+        btn_add_talhao.clicked.connect(self._adicionar_talhao_row)
+        talhoes_header.addWidget(btn_add_talhao)
+
+        talhoes_section_layout.addLayout(talhoes_header)
+
+        self.talhoes_container = QWidget()
+        self.talhoes_container_layout = QVBoxLayout(self.talhoes_container)
+        self.talhoes_container_layout.setContentsMargins(0, 0, 0, 0)
+        self.talhoes_container_layout.setSpacing(5)
+        self.talhoes_rows = []
+
+        talhoes_section_layout.addWidget(self.talhoes_container)
+        card_layout.addWidget(self.talhoes_section_widget)
+        self.talhoes_section_widget.setVisible(False)
+
         card_layout.addStretch()
 
         btn_layout = QHBoxLayout()
@@ -241,7 +282,7 @@ class LoteDialog(QDialog):
 
         show_adubo = tipo == "adubo"
         show_calcario = tipo == "calcario"
-        show_qtd = tipo in ("adubo", "carregamento")
+        show_qtd = tipo in ("adubo", "carregamento", "feno", "presecado")
         self.adubo_widget.setVisible(show_adubo)
         self.adubo_combo.setVisible(show_adubo)
         self.calcario_widget.setVisible(show_calcario)
@@ -250,6 +291,9 @@ class LoteDialog(QDialog):
             w.setVisible(show_qtd)
         for w in self.fazenda_section:
             w.setVisible(show_adubo)
+
+        show_talhoes = tipo in ("feno", "presecado")
+        self.talhoes_section_widget.setVisible(show_talhoes)
 
     def _atualizar_total_rateio(self):
         total = sum(d["spin"].value() for d in self.fazenda_spins.values())
@@ -297,6 +341,9 @@ class LoteDialog(QDialog):
             if fid in self.fazenda_spins:
                 self.fazenda_spins[fid]["spin"].setValue(float(item["quantidade"]))
 
+        for t in l.get("talhoes", []):
+            self._adicionar_talhao_row(t.get("nome", ""), t.get("tamanho", 0))
+
     def _validar_salvar(self):
         if not self.txt_nome_lote.text().strip():
             self._msg_box(QMessageBox.Warning, "Validação", "Nome do lote é obrigatório.")
@@ -312,6 +359,13 @@ class LoteDialog(QDialog):
             if total_rateio > pedido:
                 self._msg_box(QMessageBox.Warning, "Validação",
                     f"O total rateado ({total_rateio:.3f}) excede o pedido ({pedido:.3f}).")
+                return
+
+        if tipo in ("feno", "presecado"):
+            tem_nome = any(r["nome"].text().strip() for r in self.talhoes_rows)
+            if not tem_nome:
+                self._msg_box(QMessageBox.Warning, "Validação",
+                    "Adicione pelo menos um talhão com nome.")
                 return
 
         self.accept()
@@ -337,7 +391,16 @@ class LoteDialog(QDialog):
             if qtd > 0:
                 fazendas.append({"fazenda_id": fid, "quantidade": qtd})
 
-        tem_qtd = tipo in ("adubo", "carregamento")
+        tem_qtd = tipo in ("adubo", "carregamento", "feno", "presecado")
+
+        talhoes = []
+        for row in self.talhoes_rows:
+            nome = row["nome"].text().strip()
+            if nome:
+                talhoes.append({
+                    "nome": nome,
+                    "tamanho": row["tamanho"].value(),
+                })
 
         return {
             "tipo": tipo,
@@ -349,6 +412,7 @@ class LoteDialog(QDialog):
             "unidade": self.cmb_unidade.currentText() if tem_qtd else None,
             "valor_unitario": self.spn_valor_unitario.value(),
             "fazendas": fazendas,
+            "talhoes": talhoes,
         }
 
     def _msg_box(self, icone, titulo, texto, botoes=None):
@@ -407,6 +471,54 @@ class LoteDialog(QDialog):
             }
         """
 
+    def _adicionar_talhao_row(self, nome="", tamanho=0):
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(8)
+
+        edt_nome = UpperCaseLineEdit()
+        edt_nome.setPlaceholderText("Nome do Talhão")
+        edt_nome.setStyleSheet(self._input_style())
+        if nome:
+            edt_nome.setText(nome)
+        row_layout.addWidget(edt_nome, 2)
+
+        spn_tamanho = QDoubleSpinBox()
+        spn_tamanho.setRange(0, 999999)
+        spn_tamanho.setDecimals(2)
+        spn_tamanho.setSuffix(" ha")
+        spn_tamanho.setMinimumWidth(120)
+        spn_tamanho.setStyleSheet(self._input_style())
+        if tamanho:
+            spn_tamanho.setValue(tamanho)
+        row_layout.addWidget(spn_tamanho, 1)
+
+        btn_remover = QPushButton("×")
+        btn_remover.setFixedSize(32, 32)
+        btn_remover.setCursor(Qt.PointingHandCursor)
+        btn_remover.setStyleSheet("""
+            QPushButton {
+                background: #e74c3c; color: white;
+                border: none; border-radius: 16px;
+                font-weight: 700; font-size: 18px;
+            }
+            QPushButton:hover { background: #ec7063; }
+            QPushButton:pressed { background: #c0392b; }
+        """)
+        row_layout.addWidget(btn_remover)
+
+        self.talhoes_container_layout.addWidget(row)
+        self.talhoes_rows.append({"nome": edt_nome, "tamanho": spn_tamanho, "widget": row})
+        btn_remover.clicked.connect(lambda checked, r=row: self._remover_talhao_row(r))
+
+    def _remover_talhao_row(self, row):
+        for i, r in enumerate(self.talhoes_rows):
+            if r["widget"] is row:
+                r["widget"].deleteLater()
+                self.talhoes_rows.pop(i)
+                break
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.reject()
@@ -455,6 +567,8 @@ class LoteView(QWidget):
         self.cmb_filtro_tipo.addItem("Carregamento", "carregamento")
         self.cmb_filtro_tipo.addItem("Adubo", "adubo")
         self.cmb_filtro_tipo.addItem("Calcário", "calcario")
+        self.cmb_filtro_tipo.addItem("Feno", "feno")
+        self.cmb_filtro_tipo.addItem("Pré-secado", "presecado")
         self.cmb_filtro_tipo.setStyleSheet("""
             QComboBox {
                 padding: 10px 14px;
@@ -617,7 +731,7 @@ class LoteView(QWidget):
                 or busca in (l.get("entidade_nome") or "").lower()
             ]
 
-        tipos_label = {"carregamento": "Carregamento", "adubo": "Adubo", "calcario": "Calcário"}
+        tipos_label = {"carregamento": "Carregamento", "adubo": "Adubo", "calcario": "Calcário", "feno": "Feno", "presecado": "Pré-secado"}
 
         self.table.setRowCount(len(lotes))
         for i, l in enumerate(lotes):

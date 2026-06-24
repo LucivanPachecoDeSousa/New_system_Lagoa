@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer, QDate
 from PySide6.QtGui import QColor
 from controllers.feno_controller import FenoController
+from controllers.lote_controller import LoteController
 from utils.widgets import msg_box
 from controllers.auth_controller import AuthController
 from utils.widgets import UpperCaseLineEdit, estilizar_calendario
@@ -73,6 +74,14 @@ class FenoDialog(QDialog):
         linha2.addLayout(g3)
         linha2.addStretch()
         card_layout.addLayout(linha2)
+
+        linha_lote = QHBoxLayout()
+        linha_lote.setSpacing(12)
+        g_lote = self._grupo("LOTE", self._criar_lote())
+        g_talhao = self._grupo("TALHÃO", self._criar_talhao())
+        linha_lote.addLayout(g_lote)
+        linha_lote.addLayout(g_talhao)
+        card_layout.addLayout(linha_lote)
 
         linha3 = QHBoxLayout()
         linha3.setSpacing(12)
@@ -238,6 +247,45 @@ class FenoDialog(QDialog):
         """)
         return self.spin_media
 
+    def _criar_lote(self):
+        self.cmb_lote = QComboBox()
+        self.cmb_lote.setStyleSheet(self._input_style())
+        self.lote_controller = LoteController()
+        self._popular_lotes()
+        self.cmb_lote.currentIndexChanged.connect(self._popular_talhoes)
+        self.cmb_tipo.currentIndexChanged.connect(self._popular_lotes)
+        return self.cmb_lote
+
+    def _popular_lotes(self):
+        self.cmb_lote.blockSignals(True)
+        self.cmb_lote.clear()
+        self.cmb_lote.addItem("Selecione um lote", None)
+        tipo_filtro = self.cmb_tipo.currentData().lower()
+        if tipo_filtro:
+            lotes = self.lote_controller.listar(tipo=tipo_filtro)
+            for l in lotes:
+                self.cmb_lote.addItem(l["nome_lote"], l["id"])
+        self.cmb_lote.blockSignals(False)
+
+    def _criar_talhao(self):
+        self.cmb_talhao = QComboBox()
+        self.cmb_talhao.setStyleSheet(self._input_style())
+        return self.cmb_talhao
+
+    def _popular_talhoes(self):
+        self.cmb_talhao.blockSignals(True)
+        self.cmb_talhao.clear()
+        self.cmb_talhao.addItem("Selecione um talhão", None)
+        lote_id = self.cmb_lote.currentData()
+        if lote_id:
+            talhoes = self.lote_controller.listar_talhoes(lote_id)
+            for t in talhoes:
+                label = t["nome"]
+                if t.get("tamanho"):
+                    label += f" ({t['tamanho']} ha)"
+                self.cmb_talhao.addItem(label, t["id"])
+        self.cmb_talhao.blockSignals(False)
+
     def _field_style(self):
         return """
             QDateEdit, QDoubleSpinBox {
@@ -307,6 +355,15 @@ class FenoDialog(QDialog):
         self.spin_qtd.setValue(r.get("quantidade", 0))
         self.spin_media.setValue(r.get("media_peso", 0))
 
+        if r.get("lote_id"):
+            idx = self.cmb_lote.findData(r["lote_id"])
+            if idx >= 0:
+                self.cmb_lote.setCurrentIndex(idx)
+        if r.get("talhao_id"):
+            idx = self.cmb_talhao.findData(r["talhao_id"])
+            if idx >= 0:
+                self.cmb_talhao.setCurrentIndex(idx)
+
     def _validar_salvar(self):
         if self.spin_bruto.value() <= 0:
             self._msg_erro("O peso bruto deve ser maior que zero.")
@@ -344,6 +401,8 @@ class FenoDialog(QDialog):
             "peso_liquido": self.spin_liquido.value(),
             "quantidade": self.spin_qtd.value(),
             "media_peso": self.spin_media.value(),
+            "lote_id": self.cmb_lote.currentData(),
+            "talhao_id": self.cmb_talhao.currentData(),
         }
 
     def keyPressEvent(self, event):
@@ -486,10 +545,10 @@ class FenoView(QWidget):
         card_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(9)
+        self.table.setColumnCount(11)
         self.table.setHorizontalHeaderLabels(
-            ["ID", "Data", "Tipo", "Placa", "Peso Bruto", "Tara",
-             "Peso Líquido", "Quantidade", "Média (Kg/Un)"]
+            ["ID", "Data", "Tipo", "Lote", "Talhão", "Placa", "Peso Bruto",
+             "Tara", "Peso Líquido", "Quantidade", "Média (Kg/Un)"]
         )
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -509,6 +568,8 @@ class FenoView(QWidget):
         header_view.setSectionResizeMode(6, stretch)
         header_view.setSectionResizeMode(7, stretch)
         header_view.setSectionResizeMode(8, stretch)
+        header_view.setSectionResizeMode(9, stretch)
+        header_view.setSectionResizeMode(10, stretch)
 
         self.table.setStyleSheet("""
             QTableWidget {
@@ -601,12 +662,14 @@ class FenoView(QWidget):
             data_str = qd.toString("dd/MM/yyyy") if qd.isValid() else r["data"][:10]
             self.table.setItem(i, 1, QTableWidgetItem(data_str))
             self.table.setItem(i, 2, QTableWidgetItem(r.get("tipo", "")))
-            self.table.setItem(i, 3, QTableWidgetItem(r.get("placa", "")))
-            self.table.setItem(i, 4, QTableWidgetItem(self._fmt_num(r.get("peso_bruto", 0))))
-            self.table.setItem(i, 5, QTableWidgetItem(self._fmt_num(r.get("tara", 0))))
-            self.table.setItem(i, 6, QTableWidgetItem(self._fmt_num(r.get("peso_liquido", 0))))
-            self.table.setItem(i, 7, QTableWidgetItem(self._fmt_num(r.get("quantidade", 0))))
-            self.table.setItem(i, 8, QTableWidgetItem(self._fmt_num(r.get("media_peso", 0))))
+            self.table.setItem(i, 3, QTableWidgetItem(r.get("nome_lote", "")))
+            self.table.setItem(i, 4, QTableWidgetItem(r.get("nome_talhao", "")))
+            self.table.setItem(i, 5, QTableWidgetItem(r.get("placa", "")))
+            self.table.setItem(i, 6, QTableWidgetItem(self._fmt_num(r.get("peso_bruto", 0))))
+            self.table.setItem(i, 7, QTableWidgetItem(self._fmt_num(r.get("tara", 0))))
+            self.table.setItem(i, 8, QTableWidgetItem(self._fmt_num(r.get("peso_liquido", 0))))
+            self.table.setItem(i, 9, QTableWidgetItem(self._fmt_num(r.get("quantidade", 0))))
+            self.table.setItem(i, 10, QTableWidgetItem(self._fmt_num(r.get("media_peso", 0))))
             total_peso += r.get("peso_liquido", 0) or 0
             total_qtd += r.get("quantidade", 0) or 0
 
@@ -699,18 +762,24 @@ class FenoView(QWidget):
             self._carregar_dados()
 
     def _exportar(self):
-        tipo = self.cmb_filtro_tipo.currentData()
-        registros = self.controller.listar(tipo=tipo)
-        cabecalhos = ["ID", "Data", "Tipo", "Placa", "Peso Bruto", "Tara",
-                       "Peso Líquido", "Quantidade", "Média (Kg/Un)"]
-        dados = []
-        for r in registros:
-            qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
-            data_str = qd.toString("dd/MM/yyyy") if qd.isValid() else r["data"][:10]
-            dados.append((
-                r["id"], data_str, r.get("tipo", ""),
-                r.get("placa", ""), r.get("peso_bruto", 0),
-                r.get("tara", 0), r.get("peso_liquido", 0),
-                r.get("quantidade", 0), r.get("media_peso", 0),
-            ))
-        exportar_excel(self, "relatorio_feno.xlsx", "Feno / Pré-Secado", cabecalhos, dados)
+        try:
+            tipo = self.cmb_filtro_tipo.currentData()
+            registros = self.controller.listar(tipo=tipo)
+            cabecalhos = ["ID", "Data", "Tipo", "Lote", "Talhão", "Placa",
+                           "Peso Bruto", "Tara", "Peso Líquido", "Quantidade", "Média (Kg/Un)"]
+            dados = []
+            for r in registros:
+                qd = QDate.fromString(r["data"][:10], "yyyy-MM-dd")
+                data_str = qd.toString("dd/MM/yyyy") if qd.isValid() else r["data"][:10]
+                dados.append((
+                    r["id"], data_str, r.get("tipo", ""),
+                    r.get("nome_lote", ""), r.get("nome_talhao", ""),
+                    r.get("placa", ""), r.get("peso_bruto", 0),
+                    r.get("tara", 0), r.get("peso_liquido", 0),
+                    r.get("quantidade", 0), r.get("media_peso", 0),
+                ))
+            exportar_excel(self, "relatorio_feno.xlsx", "Feno / Pré-Secado", cabecalhos, dados)
+        except Exception as e:
+            import traceback
+            msg_box(self, QMessageBox.Critical, "Erro",
+                    f"Erro ao exportar:\n{e}\n\n{traceback.format_exc()}")

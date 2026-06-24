@@ -76,19 +76,6 @@ def criar_tabelas():
             cursor.execute("INSERT INTO adubo_tipos (nome) VALUES (?)", (nome,))
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS lotes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tipo TEXT NOT NULL CHECK (tipo IN ('carregamento', 'adubo', 'calcario')),
-            entidade_id INTEGER REFERENCES entidades(id),
-            nome_lote TEXT NOT NULL,
-            tipo_adubo_id INTEGER REFERENCES adubo_tipos(id),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            ativo INTEGER DEFAULT 1
-        )
-    """)
-
-    cursor.execute("""
         CREATE TABLE IF NOT EXISTS fazendas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT UNIQUE NOT NULL,
@@ -102,20 +89,67 @@ def criar_tabelas():
         if cursor.fetchone() is None:
             cursor.execute("INSERT INTO fazendas (nome) VALUES (?)", (nome,))
 
-    for col, tipo in [("quantidade_pedido", "REAL"), ("unidade", "TEXT")]:
-        try:
-            cursor.execute(f"ALTER TABLE lotes ADD COLUMN {col} {tipo}")
-        except Exception:
-            pass
-
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS lotes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo TEXT NOT NULL CHECK (tipo IN ('carregamento', 'adubo', 'calcario', 'feno', 'presecado')),
+            entidade_id INTEGER REFERENCES entidades(id),
+            nome_lote TEXT NOT NULL,
+            tipo_adubo_id INTEGER REFERENCES adubo_tipos(id),
+            tipo_calcario_id INTEGER REFERENCES calcario_tipos(id),
+            quantidade_pedido REAL,
+            unidade TEXT,
+            valor_unitario REAL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ativo INTEGER DEFAULT 1
+        )
+    """)
+    try:
+        cursor.execute("ALTER TABLE lotes ADD COLUMN quantidade_pedido REAL")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE lotes ADD COLUMN unidade TEXT")
+    except Exception:
+        pass
     try:
         cursor.execute("ALTER TABLE lotes ADD COLUMN valor_unitario REAL DEFAULT 0")
     except Exception:
         pass
-
     try:
         cursor.execute("ALTER TABLE lotes ADD COLUMN tipo_calcario_id INTEGER REFERENCES calcario_tipos(id)")
     except Exception:
+        pass
+
+    try:
+        cursor.execute("SELECT sql FROM sqlite_master WHERE name='lotes'")
+        row = cursor.fetchone()
+        if row and "feno" not in row[0]:
+            cursor.execute("PRAGMA foreign_keys=OFF")
+            cursor.execute("""CREATE TABLE lotes_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo TEXT NOT NULL CHECK (tipo IN ('carregamento', 'adubo', 'calcario', 'feno', 'presecado')),
+                entidade_id INTEGER REFERENCES entidades(id),
+                nome_lote TEXT NOT NULL,
+                tipo_adubo_id INTEGER REFERENCES adubo_tipos(id),
+                tipo_calcario_id INTEGER REFERENCES calcario_tipos(id),
+                quantidade_pedido REAL,
+                unidade TEXT,
+                valor_unitario REAL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ativo INTEGER DEFAULT 1
+            )""")
+            cursor.execute("""INSERT INTO lotes_new
+                SELECT id, tipo, entidade_id, nome_lote, tipo_adubo_id,
+                       tipo_calcario_id, quantidade_pedido, unidade,
+                       valor_unitario, created_at, updated_at, ativo
+                FROM lotes""")
+            cursor.execute("DROP TABLE lotes")
+            cursor.execute("ALTER TABLE lotes_new RENAME TO lotes")
+            cursor.execute("PRAGMA foreign_keys=ON")
+    except Exception as e:
         pass
 
     cursor.execute("""
@@ -125,6 +159,16 @@ def criar_tabelas():
             fazenda_id INTEGER NOT NULL REFERENCES fazendas(id),
             quantidade REAL NOT NULL DEFAULT 0,
             UNIQUE(lote_id, fazenda_id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS lote_talhoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lote_id INTEGER NOT NULL REFERENCES lotes(id) ON DELETE CASCADE,
+            nome TEXT NOT NULL,
+            tamanho REAL NOT NULL DEFAULT 0,
+            UNIQUE(lote_id, nome)
         )
     """)
 
@@ -289,11 +333,21 @@ def criar_tabelas():
             peso_liquido REAL NOT NULL DEFAULT 0,
             quantidade REAL NOT NULL DEFAULT 0,
             media_peso REAL NOT NULL DEFAULT 0,
+            lote_id INTEGER REFERENCES lotes(id),
+            talhao_id INTEGER REFERENCES lote_talhoes(id),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             ativo INTEGER DEFAULT 1
         )
     """)
+    try:
+        cursor.execute("ALTER TABLE entradas_feno ADD COLUMN lote_id INTEGER REFERENCES lotes(id)")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE entradas_feno ADD COLUMN talhao_id INTEGER REFERENCES lote_talhoes(id)")
+    except Exception:
+        pass
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS vendas (

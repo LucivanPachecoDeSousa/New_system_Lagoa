@@ -5,7 +5,7 @@ class LoteController:
     def __init__(self):
         self.db = Database()
 
-    def listar(self, apenas_ativos=False):
+    def listar(self, apenas_ativos=False, tipo=None):
         conn = self.db.connect()
         cursor = conn.cursor()
         query = """
@@ -18,15 +18,25 @@ class LoteController:
             LEFT JOIN calcario_tipos c ON l.tipo_calcario_id = c.id
         """
         conds = []
+        params = []
         if apenas_ativos:
             conds.append("l.ativo = 1")
+        if tipo:
+            if isinstance(tipo, (list, tuple)):
+                placeholders = ",".join("?" for _ in tipo)
+                conds.append(f"l.tipo IN ({placeholders})")
+                params.extend(tipo)
+            else:
+                conds.append("l.tipo = ?")
+                params.append(tipo)
         if conds:
             query += " WHERE " + " AND ".join(conds)
         query += " ORDER BY l.created_at DESC"
-        cursor.execute(query)
+        cursor.execute(query, params)
         lotes = [dict(row) for row in cursor.fetchall()]
         for l in lotes:
             l["fazendas"] = self._listar_rateio(l["id"])
+            l["talhoes"] = self._listar_talhoes(l["id"])
         return lotes
 
     def buscar_por_id(self, lote_id):
@@ -47,6 +57,7 @@ class LoteController:
             return None
         lote = dict(row)
         lote["fazendas"] = self._listar_rateio(lote_id)
+        lote["talhoes"] = self._listar_talhoes(lote_id)
         return lote
 
     def _listar_rateio(self, lote_id):
@@ -59,6 +70,17 @@ class LoteController:
             WHERE lf.lote_id = ?
         """, (lote_id,))
         return [dict(row) for row in cursor.fetchall()]
+
+    def _listar_talhoes(self, lote_id):
+        conn = self.db.connect()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM lote_talhoes WHERE lote_id = ? ORDER BY id
+        """, (lote_id,))
+        return [dict(row) for row in cursor.fetchall()]
+
+    def listar_talhoes(self, lote_id):
+        return self._listar_talhoes(lote_id)
 
     def salvar(self, dados):
         conn = self.db.connect()
@@ -80,6 +102,7 @@ class LoteController:
         )
         lote_id = cursor.lastrowid
         self._salvar_rateio(lote_id, dados.get("fazendas", []))
+        self._salvar_talhoes(lote_id, dados.get("talhoes", []))
         conn.commit()
         return lote_id
 
@@ -107,6 +130,8 @@ class LoteController:
         )
         cursor.execute("DELETE FROM lote_fazendas WHERE lote_id = ?", (lote_id,))
         self._salvar_rateio(lote_id, dados.get("fazendas", []))
+        cursor.execute("DELETE FROM lote_talhoes WHERE lote_id = ?", (lote_id,))
+        self._salvar_talhoes(lote_id, dados.get("talhoes", []))
         conn.commit()
         return True
 
@@ -118,6 +143,18 @@ class LoteController:
                 cursor.execute(
                     "INSERT INTO lote_fazendas (lote_id, fazenda_id, quantidade) VALUES (?, ?, ?)",
                     (lote_id, f["fazenda_id"], f["quantidade"]),
+                )
+
+    def _salvar_talhoes(self, lote_id, talhoes):
+        conn = self.db.connect()
+        cursor = conn.cursor()
+        for t in talhoes:
+            nome = t.get("nome", "").strip()
+            tamanho = t.get("tamanho", 0)
+            if nome and tamanho > 0:
+                cursor.execute(
+                    "INSERT INTO lote_talhoes (lote_id, nome, tamanho) VALUES (?, ?, ?)",
+                    (lote_id, nome, tamanho),
                 )
 
     def remover(self, lote_id):
