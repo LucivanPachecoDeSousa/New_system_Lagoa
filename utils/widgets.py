@@ -26,15 +26,16 @@ def msg_box(parent, icone, titulo, texto, botoes=None):
         msg.setStandardButtons(botoes)
     msg.setStyleSheet("""
         QMessageBox { background: white; color: #333; }
-        QMessageBox > QWidget { background: white; }
-        QMessageBox QLabel { color: #333; font-size: 13px; }
+        QMessageBox QWidget { background: white; }
+        QMessageBox QFrame { background: white; }
+        QMessageBox QLabel { color: #333; font-size: 13px; background: transparent; }
         QMessageBox QDialogButtonBox { background: white; }
-        QPushButton {
+        QDialogButtonBox QPushButton {
             padding: 8px 20px; background: #795548; color: white;
             border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
         }
-        QPushButton:hover { background: #8D6E63; }
-        QPushButton:pressed { background: #5D4037; }
+        QDialogButtonBox QPushButton:hover { background: #8D6E63; }
+        QDialogButtonBox QPushButton:pressed { background: #5D4037; }
     """)
     msg.setAttribute(Qt.WA_StyledBackground, True)
     return msg.exec()

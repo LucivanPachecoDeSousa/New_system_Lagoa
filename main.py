@@ -12,8 +12,16 @@ from views.main_window import MainWindow
 
 _STYLESHEET_GLOBAL = """
     QMessageBox { background: white; color: #333; }
-    QMessageBox > QWidget { background: white; }
-    QMessageBox QLabel { color: #333; font-size: 13px; }
+    QMessageBox QWidget { background: white; }
+    QMessageBox QFrame { background: white; }
+    QMessageBox QLabel { color: #333; font-size: 13px; background: transparent; }
+
+    QInputDialog { background: white; color: #333; }
+    QInputDialog QWidget { background: white; }
+    QInputDialog QLabel { color: #333; background: transparent; }
+    QInputDialog QLineEdit { background: white; color: #000; border: 1px solid #ccc; padding: 6px; }
+    QInputDialog QPushButton { padding: 6px 16px; background: #795548; color: white; border: none; border-radius: 4px; font-weight: 700; }
+    QInputDialog QPushButton:hover { background: #8D6E63; }
 """
 
 def main():
