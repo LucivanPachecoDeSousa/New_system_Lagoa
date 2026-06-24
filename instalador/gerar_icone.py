@@ -21,7 +21,7 @@ def gerar_png_icone(tamanho: int) -> bytes:
             dx, dy = x - cx, y - cy
             dist = (dx * dx + dy * dy) ** 0.5 / radius
             if dist < 0.85:
-                r, g, b, a = 34, 139, 34, 255
+                r, g, b, a = 121, 85, 72, 255
             elif dist < 0.92:
                 r, g, b, a = 255, 255, 255, 255
             else:
@@ -71,9 +71,9 @@ def criar_wizard_bmp(caminho: str, largura: int, altura: int, tipo: str = "large
     draw = ImageDraw.Draw(img)
 
     if tipo == "large":
-        cor1 = (26, 115, 26)
-        cor2 = (34, 139, 34)
-        cor3 = (21, 90, 21)
+        cor1 = (93, 64, 55)
+        cor2 = (121, 85, 72)
+        cor3 = (78, 52, 46)
         for y in range(altura):
             r = int(cor1[0] + (cor2[0] - cor1[0]) * (y / altura) * 0.7)
             g = int(cor1[1] + (cor2[1] - cor1[1]) * (y / altura) * 0.7)
@@ -86,7 +86,7 @@ def criar_wizard_bmp(caminho: str, largura: int, altura: int, tipo: str = "large
             draw.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(255, 255, 255, alpha), width=1)
 
         draw.ellipse([cx - 30, cy - 30, cx + 30, cy + 30], fill=(255, 255, 255, 40))
-        draw.ellipse([cx - 22, cy - 22, cx + 22, cy + 22], fill=(34, 139, 34, 255))
+        draw.ellipse([cx - 22, cy - 22, cx + 22, cy + 22], fill=(121, 85, 72, 255))
 
         try:
             font = ImageFont.truetype("arial.ttf", 20)
@@ -103,7 +103,7 @@ def criar_wizard_bmp(caminho: str, largura: int, altura: int, tipo: str = "large
         draw.text((cx, altura - 40), "Gestao Agropecuaria", fill=(255, 255, 255, 150), font=font2, anchor="mm")
 
     else:
-        cor_fundo = (26, 115, 26)
+        cor_fundo = (93, 64, 55)
         for y in range(altura):
             fator = 1 - (y / altura) * 0.3
             r = int(cor_fundo[0] * fator)
@@ -113,7 +113,7 @@ def criar_wizard_bmp(caminho: str, largura: int, altura: int, tipo: str = "large
 
         cx, cy = largura // 2, altura // 2
         draw.ellipse([cx - 18, cy - 18, cx + 18, cy + 18], fill=(255, 255, 255, 50))
-        draw.ellipse([cx - 12, cy - 12, cx + 12, cy + 12], fill=(34, 139, 34, 255))
+        draw.ellipse([cx - 12, cy - 12, cx + 12, cy + 12], fill=(121, 85, 72, 255))
         try:
             font = ImageFont.truetype("arial.ttf", 11)
         except:

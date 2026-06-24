@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, QTimer, QDate
 from PySide6.QtGui import QColor
 from controllers.usuario_controller import UsuarioController
 from controllers.backup_controller import BackupController
+from utils.widgets import msg_box
 from controllers.migracao_controller import MigracaoController
 from utils.widgets import UpperCaseLineEdit
 
@@ -413,35 +414,7 @@ class ConfigView(QWidget):
         layout.addWidget(card)
 
     def _msg_box(self, icone, titulo, texto, botoes=None):
-        msg = QMessageBox(self)
-        msg.setIcon(icone)
-        msg.setWindowTitle(titulo)
-        msg.setText(texto)
-        if botoes:
-            msg.setStandardButtons(botoes)
-        msg.setStyleSheet("""
-            QMessageBox {
-                background: white;
-                color: #333;
-            }
-            QMessageBox QLabel {
-                color: #333;
-                font-size: 13px;
-            }
-            QPushButton {
-                padding: 8px 20px;
-                background: #795548;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-weight: 700;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #8D6E63;
-            }
-        """)
-        return msg.exec()
+        return msg_box(self, icone, titulo, texto, botoes)
 
     def _fazer_backup(self):
         pasta = QFileDialog.getExistingDirectory(self, "Selecione onde salvar o backup")

@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QLineEdit
+from PySide6.QtWidgets import QLineEdit, QMessageBox
+from PySide6.QtCore import Qt
 
 
 class UpperCaseLineEdit(QLineEdit):
@@ -14,6 +15,29 @@ class UpperCaseLineEdit(QLineEdit):
             self.setText(upper)
             self.setCursorPosition(min(pos, len(upper)))
         self.blockSignals(False)
+
+
+def msg_box(parent, icone, titulo, texto, botoes=None):
+    msg = QMessageBox(parent)
+    msg.setIcon(icone)
+    msg.setWindowTitle(titulo)
+    msg.setText(texto)
+    if botoes:
+        msg.setStandardButtons(botoes)
+    msg.setStyleSheet("""
+        QMessageBox { background: white; color: #333; }
+        QMessageBox > QWidget { background: white; }
+        QMessageBox QLabel { color: #333; font-size: 13px; }
+        QMessageBox QDialogButtonBox { background: white; }
+        QPushButton {
+            padding: 8px 20px; background: #795548; color: white;
+            border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
+        }
+        QPushButton:hover { background: #8D6E63; }
+        QPushButton:pressed { background: #5D4037; }
+    """)
+    msg.setAttribute(Qt.WA_StyledBackground, True)
+    return msg.exec()
 
 
 def estilizar_calendario(date_edit):

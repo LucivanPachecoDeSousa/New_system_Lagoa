@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer, QDate
 from PySide6.QtGui import QColor
 from controllers.material_construcao_controller import MaterialConstrucaoController
+from utils.widgets import msg_box
 from controllers.auth_controller import AuthController
 from utils.widgets import UpperCaseLineEdit, estilizar_calendario
 from utils.excel_export import exportar_excel
@@ -639,22 +640,7 @@ class MaterialConstrucaoView(QWidget):
             )
 
     def _msg_box(self, icone, titulo, texto, botoes=None):
-        msg = QMessageBox(self)
-        msg.setIcon(icone)
-        msg.setWindowTitle(titulo)
-        msg.setText(texto)
-        if botoes:
-            msg.setStandardButtons(botoes)
-        msg.setStyleSheet("""
-            QMessageBox { background: white; color: #333; }
-            QMessageBox QLabel { color: #333; font-size: 13px; }
-            QPushButton {
-                padding: 8px 20px; background: #795548; color: white;
-                border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
-            }
-            QPushButton:hover { background: #8D6E63; }
-        """)
-        return msg.exec()
+        return msg_box(self, icone, titulo, texto, botoes)
 
     def _confirmar_senha(self):
         senha, ok = QInputDialog.getText(self, "Autenticação", "Digite sua senha:", QLineEdit.Password)

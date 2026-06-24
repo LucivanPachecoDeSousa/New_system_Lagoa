@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QFileDialog, QMessageBox
+from utils.widgets import msg_box
 
 
 def exportar_excel(parent, nome_sugerido, titulo_aba, cabecalhos, dados, col_decimals=None):
@@ -18,7 +19,7 @@ def exportar_excel(parent, nome_sugerido, titulo_aba, cabecalhos, dados, col_dec
 
     cols = len(cabecalhos)
 
-    green_fill = PatternFill(start_color="2d6a2d", end_color="2d6a2d", fill_type="solid")
+    header_fill = PatternFill(start_color="795548", end_color="795548", fill_type="solid")
     header_font = Font(color="ffffff", bold=True, size=11, name="Calibri")
     thin_border = Border(
         left=Side(style='thin', color="cccccc"),
@@ -30,7 +31,7 @@ def exportar_excel(parent, nome_sugerido, titulo_aba, cabecalhos, dados, col_dec
     ws.row_dimensions[1].height = 28
     for col, titulo in enumerate(cabecalhos, 1):
         cell = ws.cell(row=1, column=col, value=titulo)
-        cell.fill = green_fill
+        cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal='center', vertical='center')
         cell.border = thin_border
@@ -57,21 +58,8 @@ def exportar_excel(parent, nome_sugerido, titulo_aba, cabecalhos, dados, col_dec
 
     ws.page_setup.orientation = 'landscape'
     ws.page_setup.fitToWidth = 1
-    ws.sheet_properties.tabColor = "2d6a2d"
+    ws.sheet_properties.tabColor = "795548"
 
     wb.save(path)
 
-    msg = QMessageBox(parent)
-    msg.setIcon(QMessageBox.Information)
-    msg.setWindowTitle("Exportado")
-    msg.setText(f"Relatório salvo em:\n{path}")
-    msg.setStyleSheet("""
-        QMessageBox { background: white; color: #333; }
-        QMessageBox QLabel { color: #333; font-size: 13px; }
-        QPushButton {
-            padding: 8px 20px; background: #795548; color: white;
-            border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
-        }
-        QPushButton:hover { background: #8D6E63; }
-    """)
-    msg.exec()
+    msg_box(parent, QMessageBox.Information, "Exportado", f"Relatório salvo em:\n{path}")

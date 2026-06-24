@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, QDate, QTimer
 from PySide6.QtGui import QColor
 from controllers.carregamento_controller import CarregamentoController
 from controllers.auth_controller import AuthController
-from utils.widgets import estilizar_calendario
+from utils.widgets import estilizar_calendario, msg_box
 
 
 class CarregamentoDialog(QDialog):
@@ -364,26 +364,9 @@ class CarregamentoDialog(QDialog):
         }
 
     def _msg_box(self, icone, titulo, texto, botoes=None):
-        msg = QMessageBox(self)
-        msg.setIcon(icone)
-        msg.setWindowTitle(titulo)
-        msg.setText(texto)
-        if botoes:
-            msg.setStandardButtons(botoes)
-        msg.setStyleSheet("""
-            QMessageBox { background: white; color: #333; }
-            QMessageBox QLabel { color: #333; font-size: 13px; }
-            QPushButton {
-                padding: 8px 20px; background: #795548; color: white;
-                border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
-            }
-            QPushButton:hover { background: #8D6E63; }
-        """)
-        return msg.exec()
+        return msg_box(self, icone, titulo, texto, botoes)
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            self.reject()
         super().keyPressEvent(event)
 
 
@@ -718,7 +701,7 @@ class CarregamentoView(QWidget):
                        "P. NF", "Nº NF", "Chave NF", "Valor Unit.", "Total NF"]
         cols = len(cabecalhos)
 
-        header_fill = PatternFill(start_color="2d6a2d", end_color="2d6a2d", fill_type="solid")
+        header_fill = PatternFill(start_color="795548", end_color="795548", fill_type="solid")
         header_font = Font(color="ffffff", bold=True, size=11)
         thin_border = Border(
             left=Side(style='thin'), right=Side(style='thin'),
@@ -788,22 +771,7 @@ class CarregamentoView(QWidget):
                        f"Relatório salvo em:\n{path}")
 
     def _msg_box(self, icone, titulo, texto, botoes=None):
-        msg = QMessageBox(self)
-        msg.setIcon(icone)
-        msg.setWindowTitle(titulo)
-        msg.setText(texto)
-        if botoes:
-            msg.setStandardButtons(botoes)
-        msg.setStyleSheet("""
-            QMessageBox { background: white; color: #333; }
-            QMessageBox QLabel { color: #333; font-size: 13px; }
-            QPushButton {
-                padding: 8px 20px; background: #795548; color: white;
-                border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
-            }
-            QPushButton:hover { background: #8D6E63; }
-        """)
-        return msg.exec()
+        return msg_box(self, icone, titulo, texto, botoes)
 
     def _confirmar_senha(self):
         senha, ok = QInputDialog.getText(self, "Autenticação", "Digite sua senha:", QLineEdit.Password)
