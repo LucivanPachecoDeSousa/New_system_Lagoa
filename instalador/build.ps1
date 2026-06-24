@@ -25,11 +25,6 @@ if ($Clean) {
     foreach ($f in $folders) {
         if (Test-Path $f) { Remove-Item -Recurse -Force $f; Write-Host "  Removido: $f" }
     }
-    $specFiles = @(
-        (Join-Path $root "*.spec"),
-        (Join-Path $instalador "*.spec")
-    )
-    foreach ($p in $specFiles) { Remove-Item -Force $p -ErrorAction SilentlyContinue }
     Write-Host "  Limpeza concluida!" -ForegroundColor Green
     Write-Host ""
 }
