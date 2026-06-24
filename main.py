@@ -4,10 +4,23 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QIcon, QFont
+from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtGui import QIcon, QFont, QKeyEvent
+from PySide6.QtWidgets import QLineEdit, QComboBox, QDoubleSpinBox, QDateEdit
 from database.models import criar_tabelas, seed_admin
 from views.login import LoginView
 from views.main_window import MainWindow
+
+
+class EnterToTabFilter(QObject):
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.KeyPress and event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            widget = QApplication.focusWidget()
+            if isinstance(widget, (QLineEdit, QComboBox, QDoubleSpinBox, QDateEdit)):
+                tab = QKeyEvent(QEvent.KeyPress, Qt.Key_Tab, Qt.NoModifier)
+                QApplication.sendEvent(widget, tab)
+                return True
+        return super().eventFilter(obj, event)
 
 
 _STYLESHEET_GLOBAL = """
@@ -30,6 +43,9 @@ def main():
     app.setStyle("Fusion")
     app.setStyleSheet(_STYLESHEET_GLOBAL)
     app.setFont(QFont("Segoe UI", 11))
+
+    filter = EnterToTabFilter()
+    app.installEventFilter(filter)
     icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "instalador", "icone.ico")
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
