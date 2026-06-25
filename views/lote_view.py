@@ -651,6 +651,13 @@ class LoteView(QWidget):
         self.btn_reativar.clicked.connect(self._reativar)
         toolbar.addWidget(self.btn_reativar)
 
+        self.btn_excluir = QPushButton("Excluir")
+        self.btn_excluir.setCursor(Qt.PointingHandCursor)
+        self.btn_excluir.setFixedHeight(40)
+        self.btn_excluir.setStyleSheet(self._btn_danger())
+        self.btn_excluir.clicked.connect(self._excluir)
+        toolbar.addWidget(self.btn_excluir)
+
         card_layout.addLayout(toolbar)
 
         self.table = QTableWidget()
@@ -764,24 +771,27 @@ class LoteView(QWidget):
         self._timer.start(2000)
 
     def _editar(self):
-        row = self.table.currentRow()
-        if row < 0:
-            self._msg_box(QMessageBox.Information, "Selecione", "Selecione um lote para editar.")
-            return
-        if not self._confirmar_senha():
-            return
-        lote_id = int(self.table.item(row, 0).text())
-        lote = self.controller.buscar_por_id(lote_id)
-        if not lote:
-            self._msg_box(QMessageBox.Warning, "Erro", "Lote não encontrado.")
-            return
-        dialog = LoteDialog(self, lote)
-        self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.atualizar(lote_id, dados)
-            self._carregar_dados()
-        self._timer.start(2000)
+        try:
+            row = self.table.currentRow()
+            if row < 0:
+                self._msg_box(QMessageBox.Information, "Selecione", "Selecione um lote para editar.")
+                return
+            if not self._confirmar_senha():
+                return
+            lote_id = int(self.table.item(row, 0).text())
+            lote = self.controller.buscar_por_id(lote_id)
+            if not lote:
+                self._msg_box(QMessageBox.Warning, "Erro", "Lote não encontrado.")
+                return
+            dialog = LoteDialog(self, lote)
+            self._timer.stop()
+            if dialog.exec():
+                dados = dialog.obter_dados()
+                self.controller.atualizar(lote_id, dados)
+                self._carregar_dados()
+            self._timer.start(2000)
+        except Exception as e:
+            self._msg_box(QMessageBox.Critical, "Erro ao editar", f"{type(e).__name__}: {e}")
 
     def _encerrar(self):
         row = self.table.currentRow()
@@ -830,18 +840,46 @@ class LoteView(QWidget):
         self._msg_box(QMessageBox.Information, "Sucesso", "Lote reativado com sucesso.")
         self._carregar_dados()
 
+    def _excluir(self):
+        try:
+            row = self.table.currentRow()
+            if row < 0:
+                self._msg_box(QMessageBox.Information, "Selecione", "Selecione um lote para excluir.")
+                return
+            if not self._confirmar_senha():
+                return
+            lote_id = int(self.table.item(row, 0).text())
+            nome = self.table.item(row, 3).text()
+            self._timer.stop()
+            confirm = self._msg_box(
+                QMessageBox.Question, "Confirmar",
+                f"Tem certeza que deseja excluir permanentemente o lote '{nome}'?\n"
+                "Esta ação não pode ser desfeita.",
+                QMessageBox.Yes | QMessageBox.No,
+            )
+            self._timer.start(2000)
+            if confirm == QMessageBox.Yes:
+                self.controller.excluir(lote_id)
+                self._carregar_dados()
+        except Exception as e:
+            self._msg_box(QMessageBox.Critical, "Erro ao excluir", f"{type(e).__name__}: {e}")
+
     def _msg_box(self, icone, titulo, texto, botoes=None):
         return msg_box(self, icone, titulo, texto, botoes)
 
     def _confirmar_senha(self):
-        senha, ok = QInputDialog.getText(self, "Autenticação", "Digite sua senha:", QLineEdit.Password)
-        if not ok or not senha:
+        try:
+            senha, ok = QInputDialog.getText(self, "Autenticação", "Digite sua senha:", QLineEdit.Password)
+            if not ok or not senha:
+                return False
+            auth = AuthController()
+            if auth.verificar_senha(senha):
+                return True
+            self._msg_box(QMessageBox.Warning, "Erro", "Senha incorreta.")
             return False
-        auth = AuthController()
-        if auth.verificar_senha(senha):
-            return True
-        self._msg_box(QMessageBox.Warning, "Erro", "Senha incorreta.")
-        return False
+        except Exception as e:
+            self._msg_box(QMessageBox.Critical, "Erro na autenticação", f"{type(e).__name__}: {e}")
+            return False
 
     def _btn_primary(self):
         return """

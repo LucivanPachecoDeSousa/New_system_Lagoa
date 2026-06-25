@@ -109,29 +109,40 @@ class LoteController:
     def atualizar(self, lote_id, dados):
         conn = self.db.connect()
         cursor = conn.cursor()
-        cursor.execute(
-            """UPDATE lotes
-               SET tipo = ?, entidade_id = ?, nome_lote = ?,
-                   tipo_adubo_id = ?, tipo_calcario_id = ?,
-                   quantidade_pedido = ?, unidade = ?,
-                   valor_unitario = ?, updated_at = CURRENT_TIMESTAMP
-               WHERE id = ?""",
-            (
-                dados["tipo"],
-                dados.get("entidade_id"),
-                dados["nome_lote"],
-                dados.get("tipo_adubo_id"),
-                dados.get("tipo_calcario_id"),
-                dados.get("quantidade_pedido"),
-                dados.get("unidade"),
-                dados.get("valor_unitario", 0),
-                lote_id,
-            ),
-        )
-        cursor.execute("DELETE FROM lote_fazendas WHERE lote_id = ?", (lote_id,))
-        self._salvar_rateio(lote_id, dados.get("fazendas", []))
-        cursor.execute("DELETE FROM lote_talhoes WHERE lote_id = ?", (lote_id,))
-        self._salvar_talhoes(lote_id, dados.get("talhoes", []))
+        try:
+            cursor.execute(
+                """UPDATE lotes
+                   SET tipo = ?, entidade_id = ?, nome_lote = ?,
+                       tipo_adubo_id = ?, tipo_calcario_id = ?,
+                       quantidade_pedido = ?, unidade = ?,
+                       valor_unitario = ?, updated_at = CURRENT_TIMESTAMP
+                   WHERE id = ?""",
+                (
+                    dados["tipo"],
+                    dados.get("entidade_id"),
+                    dados["nome_lote"],
+                    dados.get("tipo_adubo_id"),
+                    dados.get("tipo_calcario_id"),
+                    dados.get("quantidade_pedido"),
+                    dados.get("unidade"),
+                    dados.get("valor_unitario", 0),
+                    lote_id,
+                ),
+            )
+        except Exception as e:
+            raise RuntimeError(f"UPDATE lotes: {e}") from e
+        try:
+            cursor.execute("DELETE FROM lote_fazendas WHERE lote_id = ?", (lote_id,))
+        except Exception as e:
+            raise RuntimeError(f"DELETE lote_fazendas: {e}") from e
+        try:
+            self._salvar_rateio(lote_id, dados.get("fazendas", []))
+        except Exception as e:
+            raise RuntimeError(f"INSERT lote_fazendas: {e}") from e
+        try:
+            self._salvar_talhoes(lote_id, dados.get("talhoes", []))
+        except Exception as e:
+            raise RuntimeError(f"UPSERT lote_talhoes: {e}") from e
         conn.commit()
         return True
 
@@ -153,7 +164,8 @@ class LoteController:
             tamanho = t.get("tamanho", 0)
             if nome and tamanho > 0:
                 cursor.execute(
-                    "INSERT INTO lote_talhoes (lote_id, nome, tamanho) VALUES (?, ?, ?)",
+                    """INSERT INTO lote_talhoes (lote_id, nome, tamanho) VALUES (?, ?, ?)
+                       ON CONFLICT(lote_id, nome) DO UPDATE SET tamanho = excluded.tamanho""",
                     (lote_id, nome, tamanho),
                 )
 
@@ -161,6 +173,22 @@ class LoteController:
         conn = self.db.connect()
         cursor = conn.cursor()
         cursor.execute("UPDATE lotes SET ativo = 0 WHERE id = ?", (lote_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+
+    def excluir(self, lote_id):
+        conn = self.db.connect()
+        cursor = conn.cursor()
+        for table in ["entradas_feno", "carregamentos", "entradas_adubo", "entradas_calcario",
+                       "lote_fazendas", "lote_talhoes"]:
+            try:
+                cursor.execute(f"DELETE FROM {table} WHERE lote_id = ?", (lote_id,))
+            except Exception as e:
+                raise RuntimeError(f"DELETE {table}: {e}") from e
+        try:
+            cursor.execute("DELETE FROM lotes WHERE id = ?", (lote_id,))
+        except Exception as e:
+            raise RuntimeError(f"DELETE lotes: {e}") from e
         conn.commit()
         return cursor.rowcount > 0
 

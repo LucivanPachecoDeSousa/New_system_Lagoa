@@ -651,6 +651,9 @@ class FenoView(QWidget):
     def _fmt_num(self, val):
         return f"{val:_.0f}".replace("_", ".")
 
+    def _fmt_media(self, val):
+        return f"{val:_.2f}".replace("_", ".")
+
     def _carregar_dados(self):
         tipo = self.cmb_filtro_tipo.currentData()
         registros = self.controller.listar(tipo=tipo)
@@ -674,10 +677,12 @@ class FenoView(QWidget):
             total_qtd += r.get("quantidade", 0) or 0
 
         nome_filtro = self.cmb_filtro_tipo.currentText()
+        media_geral = (total_peso / total_qtd) if total_qtd > 0 else 0
         self.lbl_resumo.setText(
             f"{nome_filtro}  |  "
             f"Total Peso: {self._fmt_num(total_peso)} kg  |  "
-            f"Total Quantidade: {self._fmt_num(total_qtd)} un"
+            f"Total Quantidade: {self._fmt_num(total_qtd)} un  |  "
+            f"Média Geral: {self._fmt_media(media_geral)} kg/un"
         )
 
         feno_total = feno_qtd = presecado_total = presecado_qtd = 0
@@ -690,9 +695,11 @@ class FenoView(QWidget):
                 presecado_qtd += r.get("quantidade", 0) or 0
         detalhes = []
         if feno_qtd > 0:
-            detalhes.append(f"Feno: {self._fmt_num(feno_qtd)} un  |  {self._fmt_num(feno_total)} kg")
+            feno_media = feno_total / feno_qtd
+            detalhes.append(f"Feno: {self._fmt_num(feno_qtd)} un  |  {self._fmt_num(feno_total)} kg  |  Média: {self._fmt_media(feno_media)} kg/un")
         if presecado_qtd > 0:
-            detalhes.append(f"Pré-Secado: {self._fmt_num(presecado_qtd)} un  |  {self._fmt_num(presecado_total)} kg")
+            presecado_media = presecado_total / presecado_qtd
+            detalhes.append(f"Pré-Secado: {self._fmt_num(presecado_qtd)} un  |  {self._fmt_num(presecado_total)} kg  |  Média: {self._fmt_media(presecado_media)} kg/un")
         if detalhes:
             self.lbl_resumo_detalhe.setText("  |  ".join(detalhes))
             self.lbl_resumo_detalhe.setVisible(True)
@@ -778,6 +785,15 @@ class FenoView(QWidget):
                     r.get("tara", 0), r.get("peso_liquido", 0),
                     r.get("quantidade", 0), r.get("media_peso", 0),
                 ))
+            total_bruto = sum((r.get("peso_bruto", 0) or 0) for r in registros)
+            total_tara = sum((r.get("tara", 0) or 0) for r in registros)
+            total_liquido = sum((r.get("peso_liquido", 0) or 0) for r in registros)
+            total_qtd = sum((r.get("quantidade", 0) or 0) for r in registros)
+            media_geral = round(total_liquido / total_qtd, 2) if total_qtd > 0 else 0
+            dados.append((
+                "", "MÉDIA GERAL", "", "", "", "",
+                total_bruto, total_tara, total_liquido, total_qtd, media_geral,
+            ))
             exportar_excel(self, "relatorio_feno.xlsx", "Feno / Pré-Secado", cabecalhos, dados)
         except Exception as e:
             import traceback
