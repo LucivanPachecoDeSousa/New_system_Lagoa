@@ -260,12 +260,18 @@ class FenoDialog(QDialog):
         self.cmb_lote.blockSignals(True)
         self.cmb_lote.clear()
         self.cmb_lote.addItem("Selecione um lote", None)
-        tipo_filtro = self.cmb_tipo.currentData().lower()
+        tipo_atual = self.cmb_tipo.currentData()
+        tipo_filtro = {
+            "FENO": "feno",
+            "PRÉ-SECADO": "presecado",
+        }.get(tipo_atual)
         if tipo_filtro:
-            lotes = self.lote_controller.listar(tipo=tipo_filtro)
+            lotes = self.lote_controller.listar(apenas_ativos=True, tipo=tipo_filtro)
             for l in lotes:
                 self.cmb_lote.addItem(l["nome_lote"], l["id"])
         self.cmb_lote.blockSignals(False)
+        if hasattr(self, "cmb_talhao"):
+            self._popular_talhoes()
 
     def _criar_talhao(self):
         self.cmb_talhao = QComboBox()
@@ -457,9 +463,48 @@ class FenoView(QWidget):
         self.cmb_filtro_tipo.addItem("FENO", "FENO")
         self.cmb_filtro_tipo.addItem("PRÉ-SECADO", "PRÉ-SECADO")
         self.cmb_filtro_tipo.setStyleSheet(self._combo_style())
-        self.cmb_filtro_tipo.currentIndexChanged.connect(self._carregar_dados)
+        self.cmb_filtro_tipo.currentIndexChanged.connect(self._atualizar_filtro_talhoes)
         toolbar.addWidget(self.cmb_filtro_tipo)
 
+        self.cmb_filtro_talhao = QComboBox()
+        self.cmb_filtro_talhao.setStyleSheet(self._combo_style())
+        self.cmb_filtro_talhao.currentIndexChanged.connect(self._carregar_dados)
+        self._popular_filtro_talhoes()
+        toolbar.addWidget(self.cmb_filtro_talhao)
+
+        lbl_de = QLabel("De:")
+        lbl_de.setStyleSheet("color: #555; font-size: 11px; font-weight: 700; margin-left: 5px;")
+        toolbar.addWidget(lbl_de)
+
+        self.dt_filtro_inicio = QDateEdit()
+        self.dt_filtro_inicio.setCalendarPopup(True)
+        self.dt_filtro_inicio.setDisplayFormat("dd/MM/yyyy")
+        self.dt_filtro_inicio.setSpecialValueText("Início")
+        self.dt_filtro_inicio.setDate(self.dt_filtro_inicio.minimumDate())
+        estilizar_calendario(self.dt_filtro_inicio)
+        self.dt_filtro_inicio.setStyleSheet(self._date_style())
+        self.dt_filtro_inicio.dateChanged.connect(self._carregar_dados)
+        toolbar.addWidget(self.dt_filtro_inicio)
+
+        lbl_ate = QLabel("até")
+        lbl_ate.setStyleSheet("color: #4E342E; font-weight: 600; padding: 0 4px;")
+        toolbar.addWidget(lbl_ate)
+
+        self.dt_filtro_fim = QDateEdit()
+        self.dt_filtro_fim.setCalendarPopup(True)
+        self.dt_filtro_fim.setDisplayFormat("dd/MM/yyyy")
+        self.dt_filtro_fim.setSpecialValueText("Fim")
+        self.dt_filtro_fim.setDate(self.dt_filtro_fim.minimumDate())
+        estilizar_calendario(self.dt_filtro_fim)
+        self.dt_filtro_fim.setStyleSheet(self._date_style())
+        self.dt_filtro_fim.dateChanged.connect(self._carregar_dados)
+        toolbar.addWidget(self.dt_filtro_fim)
+
+        toolbar.addStretch()
+        card_layout.addLayout(toolbar)
+
+        toolbar = QHBoxLayout()
+        toolbar.setSpacing(8)
         toolbar.addStretch()
 
         self.btn_novo = QPushButton("+ Nova Entrada")
@@ -648,15 +693,80 @@ class FenoView(QWidget):
             }
         """
 
+    def _date_style(self):
+        return """
+            QDateEdit {
+                padding: 8px 10px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                font-size: 12px;
+                background: #fafafa;
+                max-width: 130px;
+                color: #000;
+            }
+            QDateEdit:focus {
+                border-color: #795548;
+                background: white;
+            }
+            QDateEdit::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 24px;
+                border-left: 1px solid #ddd;
+            }
+        """
+
     def _fmt_num(self, val):
         return f"{val:_.0f}".replace("_", ".")
 
     def _fmt_media(self, val):
         return f"{val:_.2f}".replace("_", ".")
 
-    def _carregar_dados(self):
+    def _popular_filtro_talhoes(self):
         tipo = self.cmb_filtro_tipo.currentData()
-        registros = self.controller.listar(tipo=tipo)
+        tipo_lote = {
+            "FENO": "feno",
+            "PRÉ-SECADO": "presecado",
+        }.get(tipo)
+        talhao_atual = self.cmb_filtro_talhao.currentData()
+
+        self.cmb_filtro_talhao.blockSignals(True)
+        self.cmb_filtro_talhao.clear()
+        self.cmb_filtro_talhao.addItem("Todos os talhões", None)
+        for talhao in self.controller.listar_talhoes(tipo=tipo_lote):
+            label = talhao["nome"]
+            if talhao.get("nome_lote"):
+                label += f" — {talhao['nome_lote']}"
+            self.cmb_filtro_talhao.addItem(label, talhao["id"])
+
+        indice = self.cmb_filtro_talhao.findData(talhao_atual)
+        self.cmb_filtro_talhao.setCurrentIndex(indice if indice >= 0 else 0)
+        self.cmb_filtro_talhao.blockSignals(False)
+
+    def _atualizar_filtro_talhoes(self):
+        self._popular_filtro_talhoes()
+        self._carregar_dados()
+
+    def _obter_filtros(self):
+        data_inicio = (
+            self.dt_filtro_inicio.date().toString("yyyy-MM-dd")
+            if self.dt_filtro_inicio.text() != self.dt_filtro_inicio.specialValueText()
+            else None
+        )
+        data_fim = (
+            self.dt_filtro_fim.date().toString("yyyy-MM-dd")
+            if self.dt_filtro_fim.text() != self.dt_filtro_fim.specialValueText()
+            else None
+        )
+        return {
+            "tipo": self.cmb_filtro_tipo.currentData(),
+            "talhao_id": self.cmb_filtro_talhao.currentData(),
+            "data_inicio": data_inicio,
+            "data_fim": data_fim,
+        }
+
+    def _carregar_dados(self):
+        registros = self.controller.listar(**self._obter_filtros())
         self.table.setRowCount(len(registros))
         total_peso = total_qtd = 0
         for i, r in enumerate(registros):
@@ -770,8 +880,7 @@ class FenoView(QWidget):
 
     def _exportar(self):
         try:
-            tipo = self.cmb_filtro_tipo.currentData()
-            registros = self.controller.listar(tipo=tipo)
+            registros = self.controller.listar(**self._obter_filtros())
             cabecalhos = ["ID", "Data", "Tipo", "Lote", "Talhão", "Placa",
                            "Peso Bruto", "Tara", "Peso Líquido", "Quantidade", "Média (Kg/Un)"]
             dados = []

@@ -32,9 +32,15 @@ if ($Clean) {
 # Step 1: Install dependencies
 Write-Host ">>> Instalando dependencias..." -ForegroundColor Yellow
 try {
+    $previousErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     py -m pip install -r "$root\requirements.txt" --quiet 2>&1 | Out-Null
+    $pipExitCode = $LASTEXITCODE
+    $ErrorActionPreference = $previousErrorAction
+    if ($pipExitCode -ne 0) { throw "pip falhou (exit code: $pipExitCode)" }
     Write-Host "  Dependencias OK!" -ForegroundColor Green
 } catch {
+    $ErrorActionPreference = "Stop"
     Write-Warning "  Aviso: erro ao instalar dependencias. Continuando..."
 }
 
@@ -55,9 +61,14 @@ if (-not $SkipPyInstaller) {
     $prevLocation = Get-Location
     try {
         Set-Location $instalador
+        $previousErrorAction = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
         py -m PyInstaller --clean $specFile --noconfirm 2>&1
-        if ($LASTEXITCODE -ne 0) { throw "PyInstaller falhou (exit code: $LASTEXITCODE)" }
+        $pyInstallerExitCode = $LASTEXITCODE
+        $ErrorActionPreference = $previousErrorAction
+        if ($pyInstallerExitCode -ne 0) { throw "PyInstaller falhou (exit code: $pyInstallerExitCode)" }
     } finally {
+        $ErrorActionPreference = "Stop"
         Set-Location $prevLocation
     }
 
@@ -81,7 +92,7 @@ if (-not $SkipInno) {
     foreach ($p in $isccPaths) { if (Test-Path $p) { $iscc = $p; break } }
     if (-not $iscc) { throw "Inno Setup nao encontrado!" }
 
-    $distPath = Join-Path $root "dist\SistemaFazenda"
+    $distPath = Join-Path $instalador "dist\SistemaFazenda"
     if (-not (Test-Path $distPath)) {
         throw "Diretorio do executavel nao encontrado em: $distPath. Execute sem -SkipPyInstaller primeiro."
     }
@@ -98,9 +109,14 @@ if (-not $SkipInno) {
     $prevLocation = Get-Location
     try {
         Set-Location $instalador
+        $previousErrorAction = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
         & $iscc "instalador.iss" /O$output 2>&1
-        if ($LASTEXITCODE -ne 0) { throw "Inno Setup falhou (exit code: $LASTEXITCODE)" }
+        $innoExitCode = $LASTEXITCODE
+        $ErrorActionPreference = $previousErrorAction
+        if ($innoExitCode -ne 0) { throw "Inno Setup falhou (exit code: $innoExitCode)" }
     } finally {
+        $ErrorActionPreference = "Stop"
         Set-Location $prevLocation
     }
 

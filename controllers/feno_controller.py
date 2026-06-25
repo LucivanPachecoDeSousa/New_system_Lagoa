@@ -5,7 +5,14 @@ class FenoController:
     def __init__(self):
         self.db = Database()
 
-    def listar(self, apenas_ativos=True, tipo=None):
+    def listar(
+        self,
+        apenas_ativos=True,
+        tipo=None,
+        talhao_id=None,
+        data_inicio=None,
+        data_fim=None,
+    ):
         conn = self.db.connect()
         cursor = conn.cursor()
         query = """SELECT e.*, l.nome_lote, lt.nome AS nome_talhao
@@ -19,9 +26,34 @@ class FenoController:
         if tipo:
             conds.append("e.tipo = ?")
             params.append(tipo)
+        if talhao_id:
+            conds.append("e.talhao_id = ?")
+            params.append(talhao_id)
+        if data_inicio:
+            conds.append("e.data >= ?")
+            params.append(data_inicio)
+        if data_fim:
+            conds.append("e.data <= ?")
+            params.append(data_fim)
         if conds:
             query += " WHERE " + " AND ".join(conds)
         query += " ORDER BY e.data DESC, e.created_at DESC"
+        cursor.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+
+    def listar_talhoes(self, tipo=None):
+        conn = self.db.connect()
+        cursor = conn.cursor()
+        query = """SELECT lt.id, lt.nome, l.nome_lote
+                   FROM lote_talhoes lt
+                   JOIN lotes l ON lt.lote_id = l.id
+                   WHERE l.ativo = 1
+                     AND l.tipo IN ('feno', 'presecado')"""
+        params = []
+        if tipo:
+            query += " AND l.tipo = ?"
+            params.append(tipo)
+        query += " ORDER BY lt.nome, l.nome_lote"
         cursor.execute(query, params)
         return [dict(row) for row in cursor.fetchall()]
 
