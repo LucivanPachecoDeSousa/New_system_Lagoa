@@ -486,6 +486,25 @@ class FenoView(QWidget):
         self.dt_filtro_inicio.dateChanged.connect(self._carregar_dados)
         toolbar.addWidget(self.dt_filtro_inicio)
 
+        self.btn_limpar_inicio = QPushButton("✕")
+        self.btn_limpar_inicio.setFixedSize(24, 24)
+        self.btn_limpar_inicio.setToolTip("Limpar data inicial")
+        self.btn_limpar_inicio.setCursor(Qt.PointingHandCursor)
+        self.btn_limpar_inicio.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                color: #999;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                color: #e74c3c;
+            }
+        """)
+        self.btn_limpar_inicio.clicked.connect(self._limpar_data_inicio)
+        toolbar.addWidget(self.btn_limpar_inicio)
+
         lbl_ate = QLabel("até")
         lbl_ate.setStyleSheet("color: #4E342E; font-weight: 600; padding: 0 4px;")
         toolbar.addWidget(lbl_ate)
@@ -499,6 +518,25 @@ class FenoView(QWidget):
         self.dt_filtro_fim.setStyleSheet(self._date_style())
         self.dt_filtro_fim.dateChanged.connect(self._carregar_dados)
         toolbar.addWidget(self.dt_filtro_fim)
+
+        self.btn_limpar_fim = QPushButton("✕")
+        self.btn_limpar_fim.setFixedSize(24, 24)
+        self.btn_limpar_fim.setToolTip("Limpar data final")
+        self.btn_limpar_fim.setCursor(Qt.PointingHandCursor)
+        self.btn_limpar_fim.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                color: #999;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                color: #e74c3c;
+            }
+        """)
+        self.btn_limpar_fim.clicked.connect(self._limpar_data_fim)
+        toolbar.addWidget(self.btn_limpar_fim)
 
         toolbar.addStretch()
         card_layout.addLayout(toolbar)
@@ -745,6 +783,14 @@ class FenoView(QWidget):
 
     def _atualizar_filtro_talhoes(self):
         self._popular_filtro_talhoes()
+        self._carregar_dados()
+
+    def _limpar_data_inicio(self):
+        self.dt_filtro_inicio.setDate(self.dt_filtro_inicio.minimumDate())
+        self._carregar_dados()
+
+    def _limpar_data_fim(self):
+        self.dt_filtro_fim.setDate(self.dt_filtro_fim.minimumDate())
         self._carregar_dados()
 
     def _obter_filtros(self):
