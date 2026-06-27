@@ -11,6 +11,7 @@ from controllers.entidade_controller import EntidadeController
 from controllers.auth_controller import AuthController
 from services.cnpj_service import consultar_cnpj
 from utils.widgets import UpperCaseLineEdit, msg_box
+from utils.auto_save import AutoSaveMixin
 
 
 class ConsultaCNPJThread(QThread):
@@ -25,19 +26,23 @@ class ConsultaCNPJThread(QThread):
         self.resultado.emit(ok, data)
 
 
-class EntidadeDialog(QDialog):
+class EntidadeDialog(QDialog, AutoSaveMixin):
     def __init__(self, parent=None, entidade=None):
         super().__init__(parent)
         self.entidade = entidade
+        self.controller = EntidadeController()
         self.setWindowTitle("Editar Entidade" if entidade else "Nova Entidade")
         self.setMinimumWidth(720)
         self.setModal(True)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self._setup_ui()
+        self._iniciar_auto_save(self.controller, entidade)
         self.showMaximized()
         if entidade:
+            self._auto_save_bloqueado = True
             self._preencher(entidade)
+            self._auto_save_bloqueado = False
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -201,15 +206,17 @@ class EntidadeDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         btn_layout.addWidget(btn_cancelar)
 
-        btn_salvar = QPushButton("Salvar")
-        btn_salvar.setCursor(Qt.PointingHandCursor)
-        btn_salvar.setFixedHeight(44)
-        btn_salvar.setStyleSheet(self._btn_style())
-        btn_salvar.clicked.connect(self._validar_salvar)
-        btn_layout.addWidget(btn_salvar)
+        btn_fechar = QPushButton("Fechar")
+        btn_fechar.setCursor(Qt.PointingHandCursor)
+        btn_fechar.setFixedHeight(44)
+        btn_fechar.setStyleSheet(self._btn_style())
+        btn_fechar.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_fechar)
 
         card_layout.addLayout(btn_layout)
         layout.addWidget(card)
+
+        self._conectar_auto_save()
 
     def _toggle_doc_mode(self):
         is_cnpj = self.cmb_tipo_doc.currentData() == "cnpj"
@@ -537,13 +544,8 @@ class EntidadeView(QWidget):
     def _novo(self):
         dialog = EntidadeDialog(self)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            try:
-                self.controller.salvar(dados)
-                self._carregar_dados()
-            except ValueError as e:
-                self._msg_box(QMessageBox.Warning, "Erro", str(e))
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _editar(self):
@@ -560,13 +562,8 @@ class EntidadeView(QWidget):
             return
         dialog = EntidadeDialog(self, entidade)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            try:
-                self.controller.atualizar(entidade_id, dados)
-                self._carregar_dados()
-            except ValueError as e:
-                self._msg_box(QMessageBox.Warning, "Erro", str(e))
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _excluir(self):

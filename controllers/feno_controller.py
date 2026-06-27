@@ -47,8 +47,7 @@ class FenoController:
         query = """SELECT lt.id, lt.nome, l.nome_lote
                    FROM lote_talhoes lt
                    JOIN lotes l ON lt.lote_id = l.id
-                   WHERE l.ativo = 1
-                     AND l.tipo IN ('feno', 'presecado')"""
+                   WHERE l.tipo IN ('feno', 'presecado')"""
         params = []
         if tipo:
             query += " AND l.tipo = ?"

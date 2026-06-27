@@ -161,12 +161,11 @@ class LoteController:
         cursor = conn.cursor()
         for t in talhoes:
             nome = t.get("nome", "").strip()
-            tamanho = t.get("tamanho", 0)
-            if nome and tamanho > 0:
+            if nome:
                 cursor.execute(
                     """INSERT INTO lote_talhoes (lote_id, nome, tamanho) VALUES (?, ?, ?)
                        ON CONFLICT(lote_id, nome) DO UPDATE SET tamanho = excluded.tamanho""",
-                    (lote_id, nome, tamanho),
+                    (lote_id, nome, t.get("tamanho", 0)),
                 )
 
     def remover(self, lote_id):

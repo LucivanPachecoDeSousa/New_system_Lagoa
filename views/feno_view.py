@@ -11,11 +11,12 @@ from controllers.feno_controller import FenoController
 from controllers.lote_controller import LoteController
 from utils.widgets import msg_box
 from controllers.auth_controller import AuthController
-from utils.widgets import UpperCaseLineEdit, estilizar_calendario
+from utils.widgets import estilizar_calendario
+from utils.auto_save import AutoSaveMixin
 from utils.excel_export import exportar_excel
 
 
-class FenoDialog(QDialog):
+class FenoDialog(QDialog, AutoSaveMixin):
     def __init__(self, parent=None, registro=None):
         super().__init__(parent)
         self.registro = registro
@@ -26,9 +27,12 @@ class FenoDialog(QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self._setup_ui()
+        self._iniciar_auto_save(self.controller, registro)
         self.showMaximized()
         if registro:
+            self._auto_save_bloqueado = True
             self._preencher(registro)
+            self._auto_save_bloqueado = False
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -70,7 +74,7 @@ class FenoDialog(QDialog):
 
         linha2 = QHBoxLayout()
         linha2.setSpacing(12)
-        g3 = self._grupo("PLACA", self._criar_placa())
+        g3 = self._grupo("VEÍCULO", self._criar_veiculo())
         linha2.addLayout(g3)
         linha2.addStretch()
         card_layout.addLayout(linha2)
@@ -124,10 +128,10 @@ class FenoDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         btn_layout.addWidget(btn_cancelar)
 
-        btn_salvar = QPushButton("Salvar")
-        btn_salvar.setCursor(Qt.PointingHandCursor)
-        btn_salvar.setFixedHeight(44)
-        btn_salvar.setStyleSheet("""
+        btn_fechar = QPushButton("Fechar")
+        btn_fechar.setCursor(Qt.PointingHandCursor)
+        btn_fechar.setFixedHeight(44)
+        btn_fechar.setStyleSheet("""
             QPushButton {
                 padding: 10px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -144,12 +148,13 @@ class FenoDialog(QDialog):
                     stop:0 #795548, stop:1 #8D6E63);
             }
         """)
-        btn_salvar.clicked.connect(self._validar_salvar)
-        btn_layout.addWidget(btn_salvar)
+        btn_fechar.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_fechar)
 
         card_layout.addLayout(btn_layout)
 
         layout.addWidget(card)
+        self._conectar_auto_save()
 
     def _grupo(self, label, widget):
         vb = QVBoxLayout()
@@ -177,12 +182,11 @@ class FenoDialog(QDialog):
         self.cmb_tipo.setCurrentText("FENO")
         return self.cmb_tipo
 
-    def _criar_placa(self):
-        self.txt_placa = UpperCaseLineEdit()
-        self.txt_placa.setPlaceholderText("Placa do veículo")
-        self.txt_placa.setMaxLength(8)
-        self.txt_placa.setStyleSheet(self._input_style())
-        return self.txt_placa
+    def _criar_veiculo(self):
+        self.txt_veiculo = QLineEdit()
+        self.txt_veiculo.setPlaceholderText("Nome do veículo")
+        self.txt_veiculo.setStyleSheet(self._input_style())
+        return self.txt_veiculo
 
     def _criar_peso_bruto(self):
         self.spin_bruto = QDoubleSpinBox()
@@ -354,7 +358,7 @@ class FenoDialog(QDialog):
         idx = self.cmb_tipo.findData(r["tipo"])
         if idx >= 0:
             self.cmb_tipo.setCurrentIndex(idx)
-        self.txt_placa.setText(r.get("placa", ""))
+        self.txt_veiculo.setText(r.get("placa", ""))
         self.spin_bruto.setValue(r.get("peso_bruto", 0))
         self.spin_tara.setValue(r.get("tara", 0))
         self.spin_liquido.setValue(r.get("peso_liquido", 0))
@@ -401,7 +405,7 @@ class FenoDialog(QDialog):
         return {
             "data": self.date_data.date().toString("yyyy-MM-dd"),
             "tipo": self.cmb_tipo.currentData(),
-            "placa": self.txt_placa.text().strip(),
+            "placa": self.txt_veiculo.text().strip(),
             "peso_bruto": self.spin_bruto.value(),
             "tara": self.spin_tara.value(),
             "peso_liquido": self.spin_liquido.value(),
@@ -878,10 +882,8 @@ class FenoView(QWidget):
     def _novo(self):
         dialog = FenoDialog(self)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.salvar(dados)
-            self._carregar_dados()
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _editar(self):
@@ -898,10 +900,8 @@ class FenoView(QWidget):
             return
         dialog = FenoDialog(self, registro)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.atualizar(registro_id, dados)
-            self._carregar_dados()
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _excluir(self):

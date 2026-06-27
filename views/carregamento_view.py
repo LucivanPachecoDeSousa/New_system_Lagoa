@@ -11,9 +11,10 @@ from PySide6.QtGui import QColor
 from controllers.carregamento_controller import CarregamentoController
 from controllers.auth_controller import AuthController
 from utils.widgets import estilizar_calendario, msg_box
+from utils.auto_save import AutoSaveMixin
 
 
-class CarregamentoDialog(QDialog):
+class CarregamentoDialog(QDialog, AutoSaveMixin):
     def __init__(self, parent=None, carregamento=None):
         super().__init__(parent)
         self.carregamento = carregamento
@@ -25,9 +26,12 @@ class CarregamentoDialog(QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self._setup_ui()
+        self._iniciar_auto_save(self.controller, carregamento)
         self.showMaximized()
         if carregamento:
+            self._auto_save_bloqueado = True
             self._preencher(carregamento)
+            self._auto_save_bloqueado = False
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -99,10 +103,10 @@ class CarregamentoDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         btn_layout.addWidget(btn_cancelar)
 
-        btn_salvar = QPushButton("Salvar")
-        btn_salvar.setCursor(Qt.PointingHandCursor)
-        btn_salvar.setFixedHeight(44)
-        btn_salvar.setStyleSheet("""
+        btn_fechar = QPushButton("Fechar")
+        btn_fechar.setCursor(Qt.PointingHandCursor)
+        btn_fechar.setFixedHeight(44)
+        btn_fechar.setStyleSheet("""
             QPushButton {
                 padding: 10px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -119,11 +123,13 @@ class CarregamentoDialog(QDialog):
                     stop:0 #3E2723, stop:1 #5D4037);
             }
         """)
-        btn_salvar.clicked.connect(self._validar_salvar)
-        btn_layout.addWidget(btn_salvar)
+        btn_fechar.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_fechar)
 
         card_layout.addLayout(btn_layout)
         layout.addWidget(card)
+
+        self._conectar_auto_save()
 
         self._on_lote_changed()
 
@@ -634,10 +640,10 @@ class CarregamentoView(QWidget):
 
     def _novo(self):
         dialog = CarregamentoDialog(self)
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.salvar(dados)
-            self._carregar_dados()
+        self._timer.stop()
+        dialog.exec()
+        self._carregar_dados()
+        self._timer.start(2000)
 
     def _editar(self):
         row = self.table.currentRow()
@@ -652,10 +658,10 @@ class CarregamentoView(QWidget):
             self._msg_box(QMessageBox.Warning, "Erro", "Carregamento não encontrado.")
             return
         dialog = CarregamentoDialog(self, carregamento)
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.atualizar(c_id, dados)
-            self._carregar_dados()
+        self._timer.stop()
+        dialog.exec()
+        self._carregar_dados()
+        self._timer.start(2000)
 
     def _excluir(self):
         row = self.table.currentRow()

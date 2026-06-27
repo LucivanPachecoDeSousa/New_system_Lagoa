@@ -9,9 +9,10 @@ from PySide6.QtGui import QColor
 from controllers.lote_controller import LoteController
 from controllers.auth_controller import AuthController
 from utils.widgets import UpperCaseLineEdit, msg_box
+from utils.auto_save import AutoSaveMixin
 
 
-class LoteDialog(QDialog):
+class LoteDialog(QDialog, AutoSaveMixin):
     def __init__(self, parent=None, lote=None):
         super().__init__(parent)
         self.lote = lote
@@ -25,9 +26,12 @@ class LoteDialog(QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self._setup_ui()
+        self._iniciar_auto_save(self.controller, lote)
         self.showMaximized()
         if lote:
+            self._auto_save_bloqueado = True
             self._preencher(lote)
+            self._auto_save_bloqueado = False
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -257,17 +261,18 @@ class LoteDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         btn_layout.addWidget(btn_cancelar)
 
-        btn_salvar = QPushButton("Salvar")
-        btn_salvar.setCursor(Qt.PointingHandCursor)
-        btn_salvar.setFixedHeight(44)
-        btn_salvar.setStyleSheet(self._btn_style())
-        btn_salvar.clicked.connect(self._validar_salvar)
-        btn_layout.addWidget(btn_salvar)
+        btn_fechar = QPushButton("Fechar")
+        btn_fechar.setCursor(Qt.PointingHandCursor)
+        btn_fechar.setFixedHeight(44)
+        btn_fechar.setStyleSheet(self._btn_style())
+        btn_fechar.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_fechar)
 
         card_layout.addLayout(btn_layout)
         layout.addWidget(card)
 
         self._toggle_campos()
+        self._conectar_auto_save()
 
     def _toggle_campos(self):
         tipo = self.cmb_tipo.currentData()
@@ -764,10 +769,8 @@ class LoteView(QWidget):
     def _novo(self):
         dialog = LoteDialog(self)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.salvar(dados)
-            self._carregar_dados()
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _editar(self):
@@ -785,10 +788,8 @@ class LoteView(QWidget):
                 return
             dialog = LoteDialog(self, lote)
             self._timer.stop()
-            if dialog.exec():
-                dados = dialog.obter_dados()
-                self.controller.atualizar(lote_id, dados)
-                self._carregar_dados()
+            dialog.exec()
+            self._carregar_dados()
             self._timer.start(2000)
         except Exception as e:
             self._msg_box(QMessageBox.Critical, "Erro ao editar", f"{type(e).__name__}: {e}")

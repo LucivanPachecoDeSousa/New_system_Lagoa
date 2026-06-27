@@ -60,6 +60,12 @@ class UsuarioController:
         conn.commit()
         return True
 
+    def salvar(self, dados):
+        ok, result = self.criar(dados)
+        if not ok:
+            raise ValueError(result)
+        return result
+
     def desativar(self, usuario_id):
         conn = self.db.connect()
         cursor = conn.cursor()

@@ -10,21 +10,29 @@ from controllers.produto_controller import ProdutoController
 from controllers.auth_controller import AuthController
 from utils.widgets import msg_box
 from utils.widgets import UpperCaseLineEdit
+from utils.auto_save import AutoSaveMixin
 
 
-class ProdutoDialog(QDialog):
+class ProdutoDialog(QDialog, AutoSaveMixin):
     def __init__(self, parent=None, produto=None):
         super().__init__(parent)
         self.produto = produto
+        self.controller = ProdutoController()
         self.setWindowTitle("Editar Produto" if produto else "Novo Produto")
         self.setMinimumWidth(480)
         self.setModal(True)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self._setup_ui()
+        self._iniciar_auto_save(self.controller, produto)
         self.showMaximized()
         if produto:
-            self.txt_nome.setText(produto["nome"])
+            self._auto_save_bloqueado = True
+            self._preencher(produto)
+            self._auto_save_bloqueado = False
+
+    def _preencher(self, produto):
+        self.txt_nome.setText(produto["nome"])
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -96,10 +104,10 @@ class ProdutoDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         btn_layout.addWidget(btn_cancelar)
 
-        btn_salvar = QPushButton("Salvar")
-        btn_salvar.setCursor(Qt.PointingHandCursor)
-        btn_salvar.setFixedHeight(44)
-        btn_salvar.setStyleSheet("""
+        btn_fechar = QPushButton("Fechar")
+        btn_fechar.setCursor(Qt.PointingHandCursor)
+        btn_fechar.setFixedHeight(44)
+        btn_fechar.setStyleSheet("""
             QPushButton {
                 padding: 10px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -116,33 +124,14 @@ class ProdutoDialog(QDialog):
                     stop:0 #795548, stop:1 #8D6E63);
             }
         """)
-        btn_salvar.clicked.connect(self._validar_salvar)
-        btn_layout.addWidget(btn_salvar)
+        btn_fechar.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_fechar)
 
         card_layout.addLayout(btn_layout)
 
         layout.addWidget(card)
 
-    def _validar_salvar(self):
-        nome = self.txt_nome.text().strip()
-        if not nome:
-            msg = QMessageBox(self)
-            msg.setIcon(QMessageBox.Warning)
-            msg.setWindowTitle("Validação")
-            msg.setText("O nome do produto é obrigatório.")
-            msg.setStyleSheet("""
-                QMessageBox { background: white; }
-                QMessageBox QLabel { color: #333; font-size: 13px; }
-                QPushButton {
-                    padding: 8px 20px; background: #795548; color: white;
-                    border: none; border-radius: 6px; font-weight: 700; min-width: 80px;
-                }
-                QPushButton:hover { background: #8D6E63; }
-            """)
-            msg.exec()
-            self.txt_nome.setFocus()
-            return
-        self.accept()
+        self._conectar_auto_save()
 
     def obter_dados(self):
         return {"nome": self.txt_nome.text().strip()}
@@ -377,10 +366,8 @@ class ProdutoView(QWidget):
     def _novo(self):
         dialog = ProdutoDialog(self)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.salvar(dados)
-            self._carregar_dados()
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _editar(self):
@@ -397,10 +384,8 @@ class ProdutoView(QWidget):
             return
         dialog = ProdutoDialog(self, produto)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.atualizar(produto_id, dados)
-            self._carregar_dados()
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _excluir(self):

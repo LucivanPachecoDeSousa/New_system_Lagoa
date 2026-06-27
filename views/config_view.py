@@ -11,21 +11,26 @@ from controllers.backup_controller import BackupController
 from utils.widgets import msg_box
 from controllers.migracao_controller import MigracaoController
 from utils.widgets import UpperCaseLineEdit
+from utils.auto_save import AutoSaveMixin
 
 
-class UsuarioDialog(QDialog):
-    def __init__(self, parent=None, usuario=None):
+class UsuarioDialog(QDialog, AutoSaveMixin):
+    def __init__(self, parent=None, usuario=None, controller=None):
         super().__init__(parent)
         self.usuario = usuario
+        self.controller = controller or UsuarioController()
         self.setWindowTitle("Editar Usuário" if usuario else "Novo Usuário")
         self.setMinimumWidth(600)
         self.setModal(True)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self._setup_ui()
+        self._iniciar_auto_save(self.controller, usuario)
         self.showMaximized()
         if usuario:
+            self._auto_save_bloqueado = True
             self._preencher(usuario)
+            self._auto_save_bloqueado = False
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -116,16 +121,18 @@ class UsuarioDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         btn_layout.addWidget(btn_cancelar)
 
-        btn_salvar = QPushButton("Salvar")
-        btn_salvar.setCursor(Qt.PointingHandCursor)
-        btn_salvar.setFixedHeight(44)
-        btn_salvar.setStyleSheet(self._btn_style())
-        btn_salvar.clicked.connect(self._validar_salvar)
-        btn_layout.addWidget(btn_salvar)
+        btn_fechar = QPushButton("Fechar")
+        btn_fechar.setCursor(Qt.PointingHandCursor)
+        btn_fechar.setFixedHeight(44)
+        btn_fechar.setStyleSheet(self._btn_style())
+        btn_fechar.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_fechar)
 
         card_layout.addLayout(btn_layout)
 
         layout.addWidget(card)
+
+        self._conectar_auto_save()
 
     def _preencher(self, u):
         self.txt_username.setText(u["username"])
@@ -541,15 +548,10 @@ class ConfigView(QWidget):
             self.table.setItem(i, 4, QTableWidgetItem(dt))
 
     def _novo(self):
-        dialog = UsuarioDialog(self)
+        dialog = UsuarioDialog(self, controller=self.usuario_controller)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            ok, result = self.usuario_controller.criar(dados)
-            if ok:
-                self._carregar_dados()
-            else:
-                self._msg_box(QMessageBox.Warning, "Erro", result)
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _editar(self):
@@ -562,12 +564,10 @@ class ConfigView(QWidget):
         if not usuario:
             self._msg_box(QMessageBox.Warning, "Erro", "Usuário não encontrado.")
             return
-        dialog = UsuarioDialog(self, usuario)
+        dialog = UsuarioDialog(self, usuario, self.usuario_controller)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.usuario_controller.atualizar(usuario_id, dados)
-            self._carregar_dados()
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _desativar(self):

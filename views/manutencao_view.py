@@ -10,11 +10,12 @@ from PySide6.QtGui import QColor
 from controllers.manutencao_controller import ManutencaoController
 from utils.widgets import msg_box
 from controllers.auth_controller import AuthController
+from utils.auto_save import AutoSaveMixin
 from utils.widgets import UpperCaseLineEdit, estilizar_calendario
 from utils.excel_export import exportar_excel
 
 
-class ManutencaoDialog(QDialog):
+class ManutencaoDialog(QDialog, AutoSaveMixin):
     def __init__(self, parent=None, registro=None):
         super().__init__(parent)
         self.registro = registro
@@ -25,9 +26,12 @@ class ManutencaoDialog(QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self._setup_ui()
+        self._iniciar_auto_save(self.controller, registro)
         self.showMaximized()
         if registro:
+            self._auto_save_bloqueado = True
             self._preencher(registro)
+            self._auto_save_bloqueado = False
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -111,10 +115,10 @@ class ManutencaoDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         btn_layout.addWidget(btn_cancelar)
 
-        btn_salvar = QPushButton("Salvar")
-        btn_salvar.setCursor(Qt.PointingHandCursor)
-        btn_salvar.setFixedHeight(44)
-        btn_salvar.setStyleSheet("""
+        btn_fechar = QPushButton("Fechar")
+        btn_fechar.setCursor(Qt.PointingHandCursor)
+        btn_fechar.setFixedHeight(44)
+        btn_fechar.setStyleSheet("""
             QPushButton {
                 padding: 10px;
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
@@ -131,11 +135,12 @@ class ManutencaoDialog(QDialog):
                     stop:0 #795548, stop:1 #8D6E63);
             }
         """)
-        btn_salvar.clicked.connect(self._validar_salvar)
-        btn_layout.addWidget(btn_salvar)
+        btn_fechar.clicked.connect(self.accept)
+        btn_layout.addWidget(btn_fechar)
 
         card_layout.addLayout(btn_layout)
         layout.addWidget(card)
+        self._conectar_auto_save()
 
     def _grupo(self, label, widget):
         vb = QVBoxLayout()
@@ -538,10 +543,8 @@ class ManutencaoView(QWidget):
     def _novo(self):
         dialog = ManutencaoDialog(self)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.salvar(dados)
-            self._carregar_dados()
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _editar(self):
@@ -558,10 +561,8 @@ class ManutencaoView(QWidget):
             return
         dialog = ManutencaoDialog(self, registro)
         self._timer.stop()
-        if dialog.exec():
-            dados = dialog.obter_dados()
-            self.controller.atualizar(registro_id, dados)
-            self._carregar_dados()
+        dialog.exec()
+        self._carregar_dados()
         self._timer.start(2000)
 
     def _excluir(self):
